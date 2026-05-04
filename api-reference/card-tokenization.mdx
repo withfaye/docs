@@ -1,0 +1,171 @@
+---
+title: "Card tokenization"
+description: "Create a payment-provider token and pass it to Faye when purchasing coverage."
+icon: "credit-card"
+---
+
+Faye does not accept raw card numbers, expiration dates, or CVV values. Tokenize the card with your approved payment provider, then send only the provider token to Faye.
+
+For most partners, the payment service is Checkout.com and the Faye value is `checkOut`. Stripe is supported only when Faye enables it for your partner account.
+
+## Tokenization flow
+
+<Steps>
+  <Step title="Collect card details with a provider-controlled UI">
+    Use the hosted fields, web component, SDK, or tokenization endpoint approved during Faye onboarding.
+  </Step>
+
+  <Step title="Receive a single-use provider token">
+    The provider returns a token such as `tok_...`, or a payment method or payment intent for Stripe-based integrations.
+  </Step>
+
+  <Step title="Send the token to your backend">
+    Your backend combines the token with the quote hash and calls Faye.
+  </Step>
+
+  <Step title="Purchase the quote">
+    Send the token in `paymentInfo.paymentToken` for [`POST /v2/purchase`](/api-reference/purchase/save-and-pay-for-a-quote-v2), or in `paymentToken` for [`POST /v1/purchase`](/api-reference/purchase/purchase-coverage).
+  </Step>
+</Steps>
+
+<Warning>
+  Never log card numbers, CVV values, or full provider tokenization responses. Generate payment tokens immediately before purchase because they are single-use and may expire quickly.
+</Warning>
+
+## Checkout.com token
+
+Use Checkout.com when your Faye onboarding package sets `paymentService` to `checkOut`.
+
+For production web checkouts, use the Checkout.com card collection method approved by Faye. Checkout.com has announced that Frames is deprecated on June 30, 2026, so new builds should use a Faye-approved current Checkout.com integration.
+
+The output you need for Faye is the Checkout.com token string.
+
+```js
+async function tokenizeCardWithCheckout(card) {
+  const response = await fetch(CHECKOUT_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": CHECKOUT_PUBLIC_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      type: "card",
+      number: card.number,
+      expiry_month: card.expiryMonth,
+      expiry_year: card.expiryYear,
+      cvv: card.cvv,
+      name: card.cardholderName
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error("Card tokenization failed");
+  }
+
+  const token = await response.json();
+  return token.token;
+}
+```
+
+<Info>
+  Use the tokenization URL, public key, and PCI approach from your Faye onboarding package. Do not put your Faye bearer token or any Checkout.com secret key in browser code.
+</Info>
+
+Send the token to Faye:
+
+```json
+{
+  "policyCodeHash": "abc123def456",
+  "paymentInfo": {
+    "paymentService": "checkOut",
+    "paymentToken": "tok_checkout_single_use_token"
+  }
+}
+```
+
+## Stripe token
+
+Use Stripe only when Faye has configured your partner account for `paymentService: "stripe"`.
+
+```js
+const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+
+const { token, error } = await stripe.createToken(cardElement, {
+  name: "Jane Doe",
+  address_zip: "94105"
+});
+
+if (error) {
+  throw new Error(error.message);
+}
+
+const paymentToken = token.id;
+```
+
+Send the token to Faye:
+
+```json
+{
+  "policyCodeHash": "abc123def456",
+  "paymentInfo": {
+    "paymentService": "stripe",
+    "paymentToken": "tok_1H4qXp2eZvKYlo2CgqjQ1J4Y"
+  }
+}
+```
+
+If your Stripe setup creates a PaymentIntent or PaymentMethod instead of a card token, send the field Faye enabled for your integration:
+
+| Provider value | Faye V2 field |
+| --- | --- |
+| Card token | `paymentInfo.paymentToken` |
+| Payment intent | `paymentInfo.paymentIntent` |
+| Payment method | `paymentInfo.paymentMethod` |
+| Customer ID | `paymentInfo.customer` |
+
+## Server-side purchase example
+
+Your backend should receive only the quote hash and provider token from your checkout page.
+
+Use the [`POST /v2/purchase`](/api-reference/purchase/save-and-pay-for-a-quote-v2) reference page to test the final Faye request.
+
+```js
+async function purchaseFayePolicy({ quoteHash, paymentToken }) {
+  const response = await fetch(`${process.env.FAYE_BASE_URL}/v2/purchase`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.FAYE_API_TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      policyCodeHash: quoteHash,
+      paymentInfo: {
+        paymentService: "checkOut",
+        paymentToken
+      },
+      osInfoDto: {
+        customerTZ: "America/Los_Angeles",
+        operationSystem: "web",
+        osVersion: "Chrome"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Faye purchase failed with ${response.status}`);
+  }
+
+  return response.json();
+}
+```
+
+## Test cards
+
+Use the test card numbers provided by your payment provider in staging. Do not use real cards in staging or development.
+
+Before going live, confirm these items with Faye:
+
+- The enabled `paymentService` value.
+- Whether your purchase request should send `paymentToken`, `paymentIntent`, `paymentMethod`, or another provider field.
+- The production public key or hosted payment component setup.
+- Any 3D Secure or card authentication requirements for your checkout.

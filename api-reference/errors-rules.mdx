@@ -1,0 +1,100 @@
+---
+title: "Errors and rules"
+description: "Plan limits, add-on eligibility, and common API errors."
+icon: "triangle-alert"
+---
+
+Faye validates every quote, recalculation, purchase, amendment, and cancellation against product, residency, destination, payment, and timing rules.
+
+Use returned API messages as the source of truth. Product availability can vary by partner configuration, state of residence, trip type, add-on, and purchase date.
+
+## Core limits
+
+| Rule | Limit |
+| --- | --- |
+| Trip start date | Cannot be in the past. |
+| Trip end date | Must be after the start date. |
+| Trip duration | Maximum 90 days. |
+| Trip cost | Maximum $50,000 per traveler. |
+| Group trip cost | Maximum $150,000 total. |
+| Travelers | Minimum 1, maximum 10. |
+| Traveler age | Date of birth must be valid, and age cannot exceed 105. |
+| Residency | Must be in the United States. Use a 2-letter state code. |
+| Destination | Send destinations as an array. Restricted countries are rejected. |
+
+## Add-on timing
+
+| Add-on | Rule |
+| --- | --- |
+| Cancel For Any Reason (CFAR) | Requires eligible trip cost and initial deposit date. Trip start must be at least 3 days away. |
+| Pre-existing conditions waiver | Purchase timing depends on state. Most states require purchase within 14 days of initial deposit. WA and MO allow 21 days. |
+| Trip cancellation | Faye recommends adding trip cancellation coverage for trips that start more than 72 hours after purchase. |
+| Rental car | Send car rental dates. Dates must be within trip dates, and end date must be after start date. |
+
+## State-based differences
+
+These examples come from Faye's partner policy rules and may vary by product. Check the quote response for actual add-on availability.
+
+| Add-on or policy type | MO | NY | HI | WA | CA | PA |
+| --- | --- | --- | --- | --- | --- | --- |
+| CFAR | Yes | No | Yes | No | Yes | Yes |
+| Domestic policy | No | Yes | Yes | Yes | Yes | Yes |
+| Rental car add-on | Yes | Yes | No | Yes, up to $35K | Yes | Yes |
+| Pet add-on | No | Yes | Yes | No | Included in base plan | No |
+| Adventure and extreme sports | Yes | Yes | No | Yes | Yes | Yes |
+| Rental property damage liability | No | No | Yes | No | Yes | Yes |
+
+## Quote errors
+
+Common [`POST /v1/quote`](/api-reference/quote/generate-a-new-quote-single-product), [`POST /v2/quote`](/api-reference/quote/generate-a-new-quote-v2-single-product), and [`POST /v2/quote/recalculate`](/api-reference/quote/recalculate-quote-prices-v2) errors include:
+
+| Message pattern | Meaning |
+| --- | --- |
+| `Trip start date is missing` | Start date was not provided. |
+| `Trip end date is missing` | End date was not provided. |
+| `Trip can't start in the past` | Start date is before the allowed effective date. |
+| `End Date can't be before start date` | End date is earlier than start date. |
+| `Trip can't be more than ... days` | Trip duration exceeds the product maximum. |
+| `Trip cost is not in the allowed range` | Trip cost violates min, per-traveler, or group limits. |
+| `Quote missing travellers` | No traveler details or DOB list was provided. |
+| `Traveler age cannot be invalid or higher than 105` | DOB is invalid or traveler is outside age limits. |
+| `Quote missing residency` | Residency was not provided. |
+| `Residence must be a 2-letter US state code` | Residency state code is invalid. |
+| `Quote missing destinations` | Destination array is missing or empty. |
+| `This is a restricted country` | Destination is not eligible. |
+| `No policy product was found` | No product matched the trip, residency, or partner configuration. |
+| `Unauthorized` | Bearer token is missing or invalid. |
+
+## Add-on errors
+
+| Message pattern | Meaning |
+| --- | --- |
+| `CFAR cannot be selected without trip cancelation` | CFAR depends on trip cancellation coverage. |
+| `Initial deposit date must be provided when purchasing CFAR` | `cfarOption.initialDepositDate` is missing. |
+| `Trip start date must be at least 3 days from today when purchasing CFAR` | CFAR cutoff rule failed. |
+| `Can't have CFAR when trip cost is 0` | CFAR requires non-zero trip cost. |
+| `Missing car dates` | Rental car coverage was selected without car dates. |
+| `Car end date must be after start date` | Rental car dates are invalid. |
+| `Car dates must be within trip dates` | Rental car dates fall outside the insured trip. |
+| `... coverage is not available as an add on for this policy` | The selected product or state does not support the add-on. |
+| `... is part of ... and can't be removed` | The add-on is included in the product and cannot be removed. |
+
+## Purchase errors
+
+These errors can occur when calling [`POST /v2/purchase`](/api-reference/purchase/save-and-pay-for-a-quote-v2) or the legacy [`POST /v1/purchase`](/api-reference/purchase/purchase-coverage).
+
+| Message | Meaning | Recovery |
+| --- | --- | --- |
+| `No advisor found for given advisor id` | The `advisorId` does not match an active advisor. | Create or update the advisor, then retry. |
+| `Payment Failed` | Payment provider declined or failed the charge. | Ask the traveler for another payment method. |
+| `Price Mismatch` | Expected price is more than 1 cent away from calculated price. | Recalculate, show the new price, and retry with a fresh token. |
+| `Purchase request cannot be processed` | Request body failed validation. | Correct the request. |
+| `Payment failed (HTTP 402)` | Charge was declined or failed. | Do not retry the same token. Tokenize the card again. |
+
+## Error handling pattern
+
+1. Show validation messages near the field the traveler can fix.
+2. Recalculate after changing trip cost, dates, travelers, or add-ons.
+3. Create a new payment token after any failed purchase attempt.
+4. Log Faye request IDs or your own correlation IDs, but never log card data or raw payment-provider responses.
+5. Alert your support team on repeated `401`, `402`, or unexpected `500` responses.

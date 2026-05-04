@@ -1,0 +1,110 @@
+---
+title: "Policies and amendments"
+description: "Retrieve policies, quote amendments, apply changes, and cancel policies."
+icon: "file-pen-line"
+---
+
+After purchase, use policy and amendment endpoints to support post-sale workflows.
+
+## Retrieve a policy
+
+Call [`GET /v1/policy/code/{policyCode}/email/{email}`](/api-reference/policy/get-policy-by-policycode-and-email) to retrieve a purchased policy.
+
+```bash
+curl "https://partnerapi.fayehq.com/v1/policy/code/P26-1234/email/jane.doe@example.com" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN"
+```
+
+The `email` path parameter is legacy. The OpenAPI description allows any value or the traveler email.
+
+The response includes the current policy and related policies when a policy was reissued after a change.
+
+```json
+{
+  "policy": {
+    "groupCode": "P26-1234",
+    "status": "active",
+    "tripCost": 5200,
+    "purchaseDate": "2026-05-04T12:00:00Z",
+    "departureDate": "2026-08-15T00:00:00Z",
+    "returnDate": "2026-08-22T00:00:00Z",
+    "policyURL": "https://example.com/policy.pdf",
+    "policiesInGroup": [
+      {
+        "policyId": "P26-1234-1",
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "dateOfBirth": "1985-05-15",
+        "email": "jane.doe@example.com"
+      }
+    ]
+  },
+  "relatedPolicies": []
+}
+```
+
+## Quote an amendment
+
+Call [`POST /v1/amendment`](/api-reference/amendment/calculate-the-amendment-cost) to calculate the price difference before changing a policy.
+
+```json
+{
+  "policyCode": "P26-1234",
+  "tripCost": 6500,
+  "tripStartDate": "2026-08-16T00:00:00Z",
+  "tripEndDate": "2026-08-24T00:00:00Z"
+}
+```
+
+The response returns a `changeKey`. Store it only long enough to apply the change.
+
+```json
+{
+  "oldPrice": 375.35,
+  "newPrice": 410.25,
+  "diff": 34.9,
+  "changeKey": "change_abc123",
+  "expiration": 1800
+}
+```
+
+## Apply amendment changes
+
+Call [`POST /v1/amendment/apply/changes`](/api-reference/amendment/apply-amendment-changes) with the `changeKey`. If the amendment increases the policy price, include a payment provider token.
+
+```json
+{
+  "policyCode": "P26-1234",
+  "changeKey": "change_abc123",
+  "token": "tok_checkout_single_use_token"
+}
+```
+
+## Cancel a policy
+
+Call [`DELETE /v1/amendment/cancel`](/api-reference/amendment/cancel-a-policy) to cancel an active policy.
+
+```json
+{
+  "policyCode": "P26-1234",
+  "reason": "Customer requested cancellation"
+}
+```
+
+The response confirms the cancellation state.
+
+```json
+{
+  "policyCode": "P26-1234",
+  "status": "canceled",
+  "cancelReason": "Customer requested cancellation",
+  "cancelledAt": "2026-05-04T12:00:00Z"
+}
+```
+
+## Operational guidance
+
+- Show amendment price differences before applying changes.
+- Generate a fresh payment token when an amendment requires an additional charge.
+- Store related policy history returned by the policy endpoint.
+- Treat cancellation as final unless your Faye account manager confirms a reversal workflow.

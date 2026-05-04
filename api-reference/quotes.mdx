@@ -1,0 +1,204 @@
+---
+title: "Quotes"
+description: "Create, compare, and recalculate Faye travel protection quotes."
+icon: "file-invoice-dollar"
+---
+
+Quotes price a trip for one or more Faye products. Create the quote before collecting payment.
+
+Use V2 endpoints for new integrations:
+
+| Use case | Endpoint |
+| --- | --- |
+| One product quote | [`POST /v2/quote`](/api-reference/quote/generate-a-new-quote-v2-single-product) |
+| Multiple product quotes | [`POST /v2/quote/multi`](/api-reference/quote/generate-multiple-quotes-v2) |
+| Recalculate selected add-ons or trip cost | [`POST /v2/quote/recalculate`](/api-reference/quote/recalculate-quote-prices-v2) |
+| Retrieve all quotes in a group | [`GET /v2/quote/multi/{groupHash}`](/api-reference/quote/get-multi-quote-by-group-hash) |
+| Retrieve one quote from a group | [`GET /v2/quote/multi/{groupHash}/{hashcode}`](/api-reference/quote/get-quote-from-multi-quote-by-hashcode) |
+
+<Info>
+  Existing V1 integrations can use [`POST /v1/quote`](/api-reference/quote/generate-a-new-quote-single-product), [`POST /v1/quote/multi`](/api-reference/quote/generate-multiple-quotes), and [`POST /v1/quote/recalculate`](/api-reference/quote/recalculate-the-quote-prices-after-performing-a-change).
+</Info>
+
+## Required trip details
+
+At minimum, send:
+
+- Trip dates: `tripStartDate` and `tripEndDate`.
+- Destination: `destinations` with ISO country code details, or the V1-compatible `destination` array.
+- Residency: `residency.areaLevel1` or V1-compatible `residence`.
+- Travelers: `travellers` or V1-compatible `travelerDetails`.
+- Product: `product` or `productId` for a single quote, and `products` or `productIds` for a multi-quote.
+
+## Single quote request
+
+Use the [`POST /v2/quote`](/api-reference/quote/generate-a-new-quote-v2-single-product) reference page to run this request in the API playground.
+
+```json
+{
+  "tripStartDate": "2026-08-15",
+  "tripEndDate": "2026-08-22",
+  "destinations": [
+    {
+      "country": "FR",
+      "label": "France"
+    }
+  ],
+  "residency": {
+    "country": "US",
+    "areaLevel1": "CA"
+  },
+  "travellers": [
+    {
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "email": "jane.doe@example.com",
+      "dateOfBirth": "1985-05-15",
+      "mainTraveller": true,
+      "isDriver": false
+    }
+  ],
+  "product": "PR-STANDARD-01",
+  "tripCost": 5200,
+  "coverageOptions": {
+    "trcOption": {
+      "selected": true
+    }
+  },
+  "timezone": "America/Los_Angeles",
+  "externalId": "booking_12345"
+}
+```
+
+## Quote response
+
+Store `quoteHash`. You need it when purchasing the quote.
+
+```json
+{
+  "currentPrice": 375.35,
+  "quoteHash": "abc123def456",
+  "coverageOptions": {
+    "trcOption": {
+      "available": true,
+      "selected": true,
+      "price": 110.24
+    }
+  },
+  "policyExampleUrl": "https://example.com/sample-policy.pdf",
+  "quoteUrl": "https://example.com/quote.pdf",
+  "quotePageUrl": "https://example.com/quote"
+}
+```
+
+<Warning>
+  Make the `policyExampleUrl` available to the traveler before purchase. Faye policy examples vary by residency state and domestic or international trip type.
+</Warning>
+
+## Multi-quote request
+
+Use multi-quote when you need to show several plan options.
+
+Use the [`POST /v2/quote/multi`](/api-reference/quote/generate-multiple-quotes-v2) reference page to test multi-product pricing.
+
+```json
+{
+  "tripStartDate": "2026-08-15",
+  "tripEndDate": "2026-08-22",
+  "destinations": [
+    {
+      "country": "FR",
+      "label": "France"
+    }
+  ],
+  "residency": {
+    "country": "US",
+    "areaLevel1": "CA"
+  },
+  "travellers": [
+    {
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "email": "jane.doe@example.com",
+      "dateOfBirth": "1985-05-15",
+      "mainTraveller": true,
+      "isDriver": false
+    }
+  ],
+  "products": [
+    "PR-STANDARD-01",
+    "PR-SPORTS-01"
+  ],
+  "tripCost": 5200
+}
+```
+
+The response includes `groupHash` and an item for each product.
+
+```json
+{
+  "groupHash": "group123def456",
+  "isCompleted": false,
+  "quotes": [
+    {
+      "product": "PR-STANDARD-01",
+      "status": "quote",
+      "quote": {
+        "currentPrice": 375.35,
+        "quoteHash": "abc123def456"
+      }
+    }
+  ]
+}
+```
+
+## Add-ons
+
+Use `coverageOptions` on quote creation and recalculate after the traveler changes add-ons.
+
+| Add-on request field | Coverage |
+| --- | --- |
+| `trcOption` | Trip cancellation coverage. Recommended when the trip starts more than 72 hours after purchase. |
+| `cfarOption` | Cancel For Any Reason. Requires an eligible trip and `initialDepositDate`. |
+| `adventureOption` | Adventure and extreme sports coverage when available. |
+| `petOption` | Pet coverage when available. |
+| `vacationRentalOption` | Vacation rental property damage coverage when available. |
+| `carRentalOption` | Rental car coverage. Include car dates and car count. |
+
+## Recalculate a quote
+
+Call [`POST /v2/quote/recalculate`](/api-reference/quote/recalculate-quote-prices-v2) when the traveler changes the trip cost or add-ons.
+
+```json
+{
+  "quoteHash": "abc123def456",
+  "tripCost": 7500,
+  "addons": [
+    {
+      "type": "tripCancellation",
+      "isSelected": true
+    },
+    {
+      "type": "cancelForAnyReason",
+      "isSelected": true,
+      "initialDepositDate": "2026-05-01"
+    }
+  ]
+}
+```
+
+For multi-quote recalculation, send `groupHash` instead of `quoteHash`.
+
+## Validation rules
+
+Faye validates the quote against residency, destination, product, trip timing, traveler count, trip cost, and add-on availability.
+
+Common limits:
+
+- Trip start date cannot be in the past.
+- Trip end date must be after the start date.
+- Trip duration cannot exceed 90 days.
+- Trip cost cannot exceed $50,000 per traveler or $150,000 per group.
+- A policy supports 1 to 10 travelers.
+- Traveler age must be valid and cannot exceed 105.
+- Residency must be in the United States and should use a 2-letter state code.

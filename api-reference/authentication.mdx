@@ -1,0 +1,53 @@
+---
+title: "Authentication"
+description: "Authenticate partner API requests with Faye-issued bearer tokens."
+icon: "lock"
+---
+
+Faye authenticates partner API requests with bearer tokens. Faye provisions tokens during partner onboarding.
+
+Tokens are scoped to an environment. A staging token works only with `https://partnerapi.fayehq.com`, and a production token works only with `https://partnerapi.withfaye.com`.
+
+## Send the bearer token
+
+Include the token on every API request that requires authentication.
+
+```http
+Authorization: Bearer <token>
+```
+
+```bash
+curl "https://partnerapi.fayehq.com/v2/quote" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "tripStartDate": "2026-08-15" }'
+```
+
+## Use the API playground
+
+The OpenAPI security scheme is `http` bearer authentication. In Mintlify's API playground, paste only the token value into the authorization field.
+
+Do not include `Bearer ` in the playground field.
+
+## Token handling
+
+- Store API tokens only in server-side secrets management.
+- Do not expose Faye API tokens in browser code, mobile apps, logs, analytics, or support screenshots.
+- Use separate tokens for staging and production.
+- Rotate a token immediately if it may have been exposed.
+- Send requests over HTTPS only.
+
+<Warning>
+  Your public payment-provider key is not a Faye API token. Use public payment keys only for card tokenization. Use Faye bearer tokens only from your server.
+</Warning>
+
+## 401 responses
+
+A `401 Unauthorized` response usually means one of these issues:
+
+| Cause | Fix |
+| --- | --- |
+| The `Authorization` header is missing. | Add `Authorization: Bearer <token>`. |
+| The token is for another environment. | Use a staging token for staging and a production token for production. |
+| The token is expired, revoked, or mistyped. | Replace it with the active token from your Faye onboarding package. |
+| Browser code is calling Faye directly. | Route API calls through your backend so the bearer token stays private. |

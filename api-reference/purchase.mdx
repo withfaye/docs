@@ -1,0 +1,127 @@
+---
+title: "Purchase"
+description: "Issue a policy from a Faye quote."
+icon: "badge-check"
+---
+
+Purchase is the final step in the sales flow. Create or recalculate a quote first, show the traveler the price and policy example, tokenize the credit card, then call Faye to issue the policy.
+
+Use [`POST /v2/purchase`](/api-reference/purchase/save-and-pay-for-a-quote-v2) for new integrations.
+
+## Before purchase
+
+Complete these checks before you call the purchase endpoint:
+
+- The traveler has reviewed the quote price.
+- The traveler can access the `policyExampleUrl`.
+- You have a current `quoteHash` from the selected quote.
+- Any changed trip cost or add-ons have been recalculated.
+- You have a fresh payment provider token.
+- Your backend, not the browser, is calling Faye with the bearer token.
+
+## V2 purchase request
+
+Use the [`POST /v2/purchase`](/api-reference/purchase/save-and-pay-for-a-quote-v2) reference page to test this request in the API playground.
+
+```json
+{
+  "policyCodeHash": "abc123def456",
+  "paymentInfo": {
+    "paymentService": "checkOut",
+    "paymentToken": "tok_checkout_single_use_token"
+  },
+  "osInfoDto": {
+    "customerTZ": "America/Los_Angeles",
+    "operationSystem": "web",
+    "osVersion": "Chrome"
+  }
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `policyCodeHash` | The selected quote's `quoteHash`. |
+| `paymentInfo.paymentService` | `checkOut` for Checkout.com or `stripe` for Stripe-enabled partners. |
+| `paymentInfo.paymentToken` | The single-use card token from your payment provider. |
+| `paymentInfo.paymentIntent` | Optional. Use only when Faye configures your Stripe integration to send payment intents. |
+| `paymentInfo.paymentMethod` | Optional. Use only when Faye configures your Stripe integration to send payment methods. |
+| `paymentInfo.customer` | Optional customer ID for supported payment provider flows. |
+| `osInfoDto` | Optional operating system metadata for traveler checkout context. |
+
+You may send `tripCost` or `addons` in `POST /v2/purchase`. If you do, Faye recalculates the quote before charging.
+
+<Warning>
+  If you send changed trip cost or add-ons at purchase time, show the traveler the updated price before submitting payment.
+</Warning>
+
+## Purchase response
+
+```json
+{
+  "purchaseId": "P26-1234",
+  "plans": [
+    {
+      "name": "Jane Doe",
+      "planId": "P26-1234-1"
+    }
+  ],
+  "totalPrice": 375.35,
+  "paymentIntent": "pi_3MtweELkdIwHu7ix0Dt0gF2H",
+  "policyUrl": "https://example.com/policy.pdf",
+  "receiptUrl": "https://example.com/receipt.pdf"
+}
+```
+
+Store the `purchaseId`, individual `planId` values, `totalPrice`, and document URLs in your booking or order record.
+
+## V1 purchase
+
+Use [`POST /v1/purchase`](/api-reference/purchase/purchase-coverage) only for existing integrations or when Faye tells you to use V1.
+
+V1 purchase sends the full trip and traveler payload again, plus billing address, email, `expectedPrice`, and payment fields.
+
+```json
+{
+  "departureDate": "2026-08-15",
+  "returnDate": "2026-08-22",
+  "destination": [
+    {
+      "country": "FR"
+    }
+  ],
+  "residence": "CA",
+  "address": {
+    "addressLine1": "123 Main St",
+    "city": "San Francisco",
+    "state": "CA",
+    "zip": "94105",
+    "country": "US"
+  },
+  "primaryEmail": "jane.doe@example.com",
+  "travelerDetails": [
+    {
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "email": "jane.doe@example.com",
+      "dob": "1985-05-15"
+    }
+  ],
+  "productId": "PR-STANDARD-01",
+  "tripCost": 5200,
+  "expectedPrice": 375.35,
+  "paymentService": "checkOut",
+  "paymentToken": "tok_checkout_single_use_token"
+}
+```
+
+Faye compares `expectedPrice` with the calculated price. If the difference is more than 1 cent, the purchase fails.
+
+## Payment errors
+
+| Response | Meaning | Recovery |
+| --- | --- | --- |
+| `400 Purchase request cannot be processed` | Request validation failed. | Correct the request and retry with a fresh payment token if needed. |
+| `402 Payment failed` | The provider declined or failed the charge. | Ask the traveler to use another card or payment method. |
+| `Price Mismatch` | The quote price changed or `expectedPrice` is wrong. | Recalculate or recreate the quote, show the new price, and retry. |
+
+Payment tokens are single-use. When a purchase attempt fails after token submission, create a new provider token before retrying.

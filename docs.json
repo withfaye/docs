@@ -11,53 +11,41 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "API reference",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Start here",
+            "pages": [
+              "index",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core workflows",
+            "pages": [
+              "api-reference/authentication",
+              "api-reference/card-tokenization",
+              "api-reference/quotes",
+              "api-reference/purchase"
+            ]
+          },
+          {
+            "group": "Operations",
+            "pages": [
+              "api-reference/advisors",
+              "api-reference/policies-amendments",
+              "api-reference/errors-rules"
+            ]
+          },
+          {
+            "group": "API reference",
             "pages": [
               "api-reference/introduction"
             ]
           },
           {
-            "group": "Partner API Reference",
-            "openapi":"api-reference/openapi.yaml"
-          },
-          {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/components",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "Agent ready",
-            "pages": [
-              "agent-ready/prompt",
-              "agent-ready/visibility",
-              "agent-ready/contextual",
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
+            "group": "Endpoint reference",
+            "openapi": "api-reference/openapi.yaml"
           }
         ]
       }
@@ -65,14 +53,14 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "Faye",
+          "href": "https://www.withfaye.com",
+          "icon": "house"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Contact",
+          "href": "https://www.withfaye.com/contact",
+          "icon": "message-circle"
         }
       ]
     }
@@ -85,26 +73,18 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@withfaye.com"
+      },
+      {
+        "label": "Partnerships",
+        "href": "mailto:partnerships@withfaye.com"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Partner with Faye",
+      "href": "https://www.withfaye.com/partners"
     }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
   },
   "footer": {
     "socials": {

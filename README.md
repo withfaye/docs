@@ -1,55 +1,41 @@
-# Mintlify Starter Kit
+# Faye Partner Documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+This is the Mintlify documentation site for partners integrating with the Faye Partner Sales API.
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+The site documents how to:
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+- Authenticate with Faye-issued bearer tokens.
+- Generate single-product and multi-product quotes.
+- Tokenize credit cards with an approved payment provider.
+- Purchase policies through the V2 purchase flow.
+- Manage advisors, policies, amendments, cancellations, and common validation errors.
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+## Local preview
 
-## AI-assisted writing
-
-Set up your AI coding tool to work with Mintlify:
+Install the Mintlify CLI:
 
 ```bash
-npx skills add https://mintlify.com/docs
-```
-
-This command installs Mintlify's documentation skill for your configured AI tools like Claude Code, Cursor, Windsurf, and others. The skill includes component reference, writing standards, and workflow guidance.
-
-See the [AI tools guides](/ai-tools) for tool-specific setup.
-
-## Development
-
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
-
-```
 npm i -g mint
 ```
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
+Run the preview server from this directory:
 
-```
+```bash
 mint dev
 ```
 
-View your local preview at `http://localhost:3000`.
+The local preview opens at `http://localhost:3000`.
 
-## Publishing changes
+## Link checks
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+Run:
 
-## Need help?
+```bash
+mint broken-links
+```
 
-### Troubleshooting
+## Source material
 
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+- `api-reference/openapi.yaml` is the live OpenAPI reference.
+- `Faye API Documentation.pdf` contains partner policy rules, state differences, and common error messages.
+- `docs.json` controls Mintlify navigation and site configuration.

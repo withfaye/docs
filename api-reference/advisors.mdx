@@ -1,0 +1,88 @@
+---
+title: "Advisors"
+description: "Create and manage advisor profiles for advisor-led sales."
+icon: "user-round-check"
+---
+
+Some partners sell Faye through licensed travel advisors. When your integration is advisor-led, create or update advisor records before sending advisor IDs on quotes and purchases.
+
+## Create or update an advisor
+
+Call [`POST /v1/advisor`](/api-reference/advisor/create-or-update-an-advisor) to create or update an advisor under your partner account.
+
+```json
+{
+  "advisorId": "advisor_12345",
+  "firstName": "Jane",
+  "lastName": "Foster",
+  "email": "jane.foster@exampleagency.com",
+  "website": "https://www.exampleagency.com",
+  "trainingDate": "2026-04-18"
+}
+```
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `advisorId` | Yes | Your stable external advisor identifier. |
+| `firstName` | Yes | Advisor first name. |
+| `lastName` | Yes | Advisor last name. |
+| `email` | Yes | Advisor email. |
+| `trainingDate` | Yes | Last date the advisor completed Faye's mandatory training. |
+| `website` | No | Advisor or agency website. |
+
+Faye's API treats this as an upsert. Send the same `advisorId` to update the advisor record.
+
+## Advisor response
+
+```json
+{
+  "advisorId": "advisor_12345",
+  "trainingDate": "2026-04-18",
+  "email": "jane.foster@exampleagency.com",
+  "lastName": "Foster",
+  "firstName": "Jane",
+  "website": "https://www.exampleagency.com",
+  "status": "active"
+}
+```
+
+## Send advisor ID on quotes and purchases
+
+Pass the same `advisorId` when the advisor starts a quote or purchase.
+
+```json
+{
+  "advisorId": "advisor_12345",
+  "tripStartDate": "2026-08-15",
+  "tripEndDate": "2026-08-22",
+  "product": "PR-STANDARD-01"
+}
+```
+
+## Delete an advisor
+
+Call [`DELETE /v1/advisor`](/api-reference/advisor/delete-an-advisor) when the advisor should no longer sell under your partner account.
+
+```json
+{
+  "advisorId": "advisor_12345",
+  "reason": "Advisor left agency"
+}
+```
+
+The response returns the advisor ID and status.
+
+```json
+{
+  "advisorId": "advisor_12345",
+  "status": "deleted"
+}
+```
+
+## Validation errors
+
+| Error | Meaning |
+| --- | --- |
+| `400` | Required fields are missing or invalid. Check first name, last name, email, and training date. |
+| `404` | The advisor was not found for deletion. |
+| `401` | The bearer token is missing or invalid. |

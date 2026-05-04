@@ -1,133 +1,67 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
-icon: 'star'
+title: "Faye Partner Sales API"
+description: "Sell Faye travel protection from your own checkout or advisor workflow."
+icon: "plane"
 ---
 
-## Setting up
+Use the Faye Partner Sales API to quote travel protection, present plan documents, collect payment, and issue policies for travelers.
 
-Get your documentation site up and running in minutes.
+New integrations should use the V2 quote and purchase flow:
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+1. Create a quote with trip, residency, traveler, product, and add-on details.
+2. Show the traveler the quote price and sample policy document.
+3. Tokenize the traveler's credit card with your approved payment provider.
+4. Purchase the quote with the quote hash and payment token.
+5. Store the returned policy code, policy URL, and receipt URL.
 
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Start the integration" icon="rocket" href="/quickstart">
+    Quote and purchase a policy with the recommended V2 flow.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
 
-## Create beautiful pages
+  <Card title="Authentication" icon="lock" href="/api-reference/authentication">
+    Send your Faye-issued bearer token with every API request.
+  </Card>
 
-Everything you need to create world-class documentation.
+  <Card title="Card tokenization" icon="credit-card" href="/api-reference/card-tokenization">
+    Get a payment token without sending card numbers to Faye.
+  </Card>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+  <Card title="Endpoint reference" icon="code" href="/api-reference/introduction">
+    Review the generated OpenAPI reference for every endpoint and schema.
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+</CardGroup>
 
-## Make your content agent ready
+## Base URLs
 
-Make your docs work for humans and AI agents alike.
+| Environment | Base URL |
+| --- | --- |
+| Production | `https://partnerapi.withfaye.com` |
+| Staging | `https://partnerapi.fayehq.com` |
+| Development | `https://partnerapi.faye-dev.com` |
 
-<Columns cols={2}>
-  <Card
-    title="Prompt component"
-    icon="robot"
-    href="/agent-ready/prompt"
-  >
-    Embed shareable AI prompts readers can copy or open in Cursor.
-  </Card>
-  <Card
-    title="Visibility"
-    icon="eye"
-    href="/agent-ready/visibility"
-  >
-    Show different content to humans and agents reading your docs.
-  </Card>
-  <Card
-    title="Contextual menu"
-    icon="bolt"
-    href="/agent-ready/contextual"
-  >
-    Give readers one-click access to Claude, ChatGPT, Cursor, and more.
-  </Card>
-  <Card
-    title="AI coding tools"
-    icon="wand-magic-sparkles"
-    href="/ai-tools/claude-code"
-  >
-    Set up Claude Code, Cursor, or Windsurf with Mintlify's skill.
-  </Card>
-</Columns>
+Use staging credentials against staging URLs and production credentials against production URLs. Tokens are environment-specific.
 
-## Need inspiration?
+## Core objects
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+| Object | What it represents |
+| --- | --- |
+| Quote | A priced offer for one product. A quote includes `currentPrice`, `quoteHash`, add-on availability, `policyExampleUrl`, `quoteUrl`, and `quotePageUrl` when traveler details are present. |
+| Multi-quote | A group of quotes for multiple products. It includes a `groupHash` and one quote item per requested product. |
+| Policy | The purchased coverage. A successful purchase returns `purchaseId`, one or more traveler policy IDs, `totalPrice`, and policy or receipt URLs when available. |
+| Advisor | A licensed advisor profile under your partner account. Pass `advisorId` on quote and purchase calls when your integration is advisor-led. |
+
+## Recommended endpoints
+
+| Step | Endpoint |
+| --- | --- |
+| Create one quote | [`POST /v2/quote`](/api-reference/quote/generate-a-new-quote-v2-single-product) |
+| Create multiple product quotes | [`POST /v2/quote/multi`](/api-reference/quote/generate-multiple-quotes-v2) |
+| Recalculate a quote | [`POST /v2/quote/recalculate`](/api-reference/quote/recalculate-quote-prices-v2) |
+| Purchase a quote | [`POST /v2/purchase`](/api-reference/purchase/save-and-pay-for-a-quote-v2) |
+| Retrieve a quote group | [`GET /v2/quote/multi/{groupHash}`](/api-reference/quote/get-multi-quote-by-group-hash) |
+| Retrieve a policy | [`GET /v1/policy/code/{policyCode}/email/{email}`](/api-reference/policy/get-policy-by-policycode-and-email) |
+
+<Info>
+  V1 endpoints remain in the reference for existing integrations, including [`POST /v1/quote`](/api-reference/quote/generate-a-new-quote-single-product) and [`POST /v1/purchase`](/api-reference/purchase/purchase-coverage). Use V2 unless Faye tells you otherwise during onboarding.
+</Info>
