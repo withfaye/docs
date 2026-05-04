@@ -14,6 +14,16 @@
         "tab": "API reference",
         "groups": [
           {
+            "group": "API documentation",
+            "pages": [
+              "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Partner API Reference",
+            "openapi":"api-reference/openapi.yaml"
+          },
+          {
             "group": "Getting started",
             "pages": [
               "index",
@@ -49,16 +59,6 @@
               "ai-tools/windsurf"
             ]
           },
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Partner API Reference",
-            "openapi":"api-reference/openapi.yaml"
-          }
         ]
       }
     ],
