@@ -1,0 +1,2638 @@
+openapi: 3.0.0
+paths:
+  /v1/quote:
+    post:
+      operationId: createQuote
+      summary: Generate a new quote (single product)
+      description: Generates a price quote for a single product based on specified
+        information.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuoteDto"
+      responses:
+        "201":
+          description: The quote has been successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateQuoteResponseDto"
+        "400":
+          description: Unable to provide quote for provided parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: string
+                    example: Trip start date is in the past. Trip cost cannot exceed $40,000 per
+                      person or $150,000 in total.
+        "401":
+          description: Unauthorized
+      tags:
+        - Quote
+      security:
+        - bearer: []
+  /v1/quote/multi:
+    post:
+      operationId: generateMulti
+      summary: Generate multiple quotes
+      description: Generates price quotes for multiple products based on specified
+        information.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMultiQuoteDto"
+      responses:
+        "201":
+          description: The quotes have been successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MultiQuoteResponseDto"
+        "400":
+          description: Unable to provide quotes for provided parameters
+        "401":
+          description: Unauthorized
+      tags:
+        - Quote
+      security:
+        - bearer: []
+  /v2/quote:
+    post:
+      operationId: generateV2
+      summary: Generate a new quote (V2, single product)
+      description: Generates a price quote for a single product using the V2 API
+        endpoint. This endpoint calls the backend /quote/create/quote endpoint.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuoteDtoV2"
+      responses:
+        "201":
+          description: The quote has been successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateQuoteResponseDto"
+        "400":
+          description: Unable to provide quote for provided parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: string
+                    example: Trip start date is in the past. Trip cost cannot exceed $40,000 per
+                      person or $150,000 in total.
+        "401":
+          description: Unauthorized
+      tags:
+        - Quote
+        - Quote & Save V2
+      security:
+        - bearer: []
+  /v2/quote/multi:
+    post:
+      operationId: generateMultiV2
+      summary: Generate multiple quotes (V2)
+      description: Generates price quotes for multiple products using the V2 API
+        endpoint. This endpoint calls the backend /quote/create/quote endpoint.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMultiQuoteDtoV2"
+      responses:
+        "201":
+          description: The quotes have been successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MultiQuoteResponseDto"
+        "400":
+          description: Unable to provide quotes for provided parameters
+        "401":
+          description: Unauthorized
+      tags:
+        - Quote
+        - Quote & Save V2
+      security:
+        - bearer: []
+  /v1/quote/recalculate:
+    post:
+      operationId: QuoteController_recalculate
+      summary: Recalculate the quote prices after performing a change
+      description: This endpoint should be called whenever a change is made to the
+        quote. Such as adding or removing a traveler, changing the trip dates,
+        cost, destination or coverage options
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecalculateRequest"
+      responses:
+        "201":
+          description: The quote has been successfully recalculated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateQuoteResponseDto"
+        "400":
+          description: Unable to provide quote for provided parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: string
+                    example: Trip start date is in the past. Trip cost cannot exceed $40,000 per
+                      person or $150,000 in total.
+        "401":
+          description: Unauthorized
+      tags:
+        - Quote
+      security:
+        - bearer: []
+  /v2/quote/recalculate:
+    post:
+      operationId: recalculateV2
+      summary: Recalculate quote prices (V2)
+      description: Recalculates the quote prices after making changes. This endpoint
+        calls the backend /v2/quote/recalculate endpoint.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecalculateQuoteDtoV2"
+      responses:
+        "200":
+          description: The quote has been successfully recalculated. Always returns
+            MultiQuoteResponseDto.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MultiQuoteResponseDto"
+        "400":
+          description: Unable to recalculate quote for provided parameters
+        "401":
+          description: Unauthorized
+      tags:
+        - Quote
+        - Quote & Save V2
+      security:
+        - bearer: []
+  /v1/quote/products:
+    get:
+      operationId: QuoteController_getProducts
+      summary: Get available products
+      description: Relevant only for specific partners. This endpoint lists all the
+        available insurance products based on destination and state of residency
+      parameters:
+        - name: residencyState
+          required: false
+          in: query
+          description: Traveler's state of residence
+          schema: {}
+        - name: destination
+          required: false
+          in: query
+          description: Destination country code
+          schema: {}
+      responses:
+        "200":
+          description: The products have been successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartnerProduct"
+      tags:
+        - Quote
+      security:
+        - bearer: []
+  /v2/quote/multi/{groupHash}/{hashcode}:
+    get:
+      operationId: getMultiQuoteByHashcode
+      summary: Get quote from multi-quote by hashcode
+      description: Retrieves a specific quote from a multi-quote group using the group
+        hash and quote hashcode. Returns the quote with links added.
+      parameters:
+        - name: groupHash
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: hashcode
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The quote has been successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateQuoteResponseDto"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Quote not found
+      tags:
+        - Quote
+        - Quote & Save V2
+      security:
+        - bearer: []
+  /v2/quote/multi/{groupHash}:
+    get:
+      operationId: getMultiQuoteByGroupHash
+      summary: Get multi-quote by group hash
+      description: Retrieves all quotes in a multi-quote group using the group hash.
+        Returns all quotes with links added to each quote.
+      parameters:
+        - name: groupHash
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The multi-quote has been successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MultiQuoteResponseDto"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Multi-quote not found
+      tags:
+        - Quote
+        - Quote & Save V2
+      security:
+        - bearer: []
+  /v1/purchase:
+    post:
+      operationId: complete
+      summary: Purchase coverage
+      description: >-
+        Purchase a policy with Faye. Call this endpoint after a quote is
+        generated. 
+
+        Please provide the expected price to validate the amount to be charged. 
+
+
+        Payment token must be provided in the request body.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePurchaseDto"
+      responses:
+        "201":
+          description: The purchase has been completed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchasePolicyDto"
+        "400":
+          description: Purchase request cannot be processed
+        "402":
+          description: Payment failed
+      tags:
+        - Purchase
+      security:
+        - bearer: []
+  /v2/purchase:
+    post:
+      operationId: saveAndPayV2
+      summary: Save and pay for a quote (V2)
+      description: Saves and pays for a policy. If tripCost or addons are provided,
+        the quote will be recalculated first. This endpoint calls the backend
+        /v2/quote/saveAndPay endpoint.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveAndPayDtoV2"
+      responses:
+        "201":
+          description: The purchase has been completed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchasePolicyDto"
+        "400":
+          description: Purchase request cannot be processed
+        "402":
+          description: Payment failed
+      tags:
+        - Purchase
+        - Quote & Save V2
+      security:
+        - bearer: []
+  /v1/advisor:
+    post:
+      operationId: createOrUpdateAdvisor
+      summary: Create or update an advisor
+      description: >
+        A licensed travel advisor should undergo Faye's training every year.
+        When creating or updating an advisor, the partner declares that the
+        advisor saw the training. 
+
+        AdvisorID should pass on every quote and purchase to relevant partners.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiAdvisorDto"
+      responses:
+        "200":
+          description: Advisor has been successfully created or updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdvisorResponseDto"
+        "400":
+          description: Some of the required fields are missing (first and last name, email)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultExceptionForSwagger"
+      tags:
+        - Advisor
+      security:
+        - bearer: []
+    delete:
+      operationId: AdvisorController_deleteAdvisor
+      summary: Delete an advisor
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteAdvisorRequest"
+      responses:
+        "200":
+          description: The advisor was deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteAdvisorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultExceptionForSwagger"
+      tags:
+        - Advisor
+      security:
+        - bearer: []
+  /v1/policy/code/{policyCode}/email/{email}:
+    get:
+      operationId: PolicyController_getPolicy
+      summary: Get policy by policyCode and email
+      description: Returns a purchased policy if exists. In case the policy was
+        reissued due to a change in the policy, the new policy will be returned
+        as well as its history and any additional traveler information
+      parameters:
+        - name: policyCode
+          required: true
+          in: path
+          description: The policy code
+          schema:
+            type: string
+        - name: email
+          required: true
+          in: path
+          description: Legacy path parameter (deprecated). Pass any value or the traveler
+            email.
+          schema: {}
+      responses:
+        "200":
+          description: Policy found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPolicyResponse"
+        "400":
+          description: Email and policyID do not match.
+        "404":
+          description: Policy or email not found.
+      tags:
+        - Policy
+      security:
+        - bearer: []
+  /v1/product:
+    get:
+      operationId: ProductController_getProducts
+      summary: Get all products
+      description: Relevant only for specific partners. This endpoint lists all the
+        available insurance products
+      parameters: []
+      responses:
+        "200":
+          description: The products have been successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartnerProduct"
+      tags:
+        - Product
+  /v1/partner:
+    post:
+      operationId: createPartner
+      summary: Generate a new partner
+      description: Generates a partner based on specified information (CreatePartnerDto)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePartnerDto"
+      responses:
+        "201":
+          description: The partner has been successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatePartnerDto"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 400
+                  message:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - Name is required
+                      - Type is not recognized. Must be one of the allowed types
+                      - Please provide a valid email address
+                      - State "XYZ" is not valid. Must be a valid US state name
+                        or code
+                  error:
+                    type: string
+                    example: Bad Request
+        "401":
+          description: Unauthorized
+      tags:
+        - Partner
+      security:
+        - bearer: []
+    put:
+      operationId: update
+      summary: Update a partner
+      description: Updates a partner based on specified information (UpdatePartnerDto)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePartnerDto"
+      responses:
+        "200":
+          description: The partner has been successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdatePartnerDto"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 400
+                  message:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - External ID is required
+                      - Invalid email
+                      - State "XYZ" is not valid. Must be a valid US state name
+                        or code
+                  error:
+                    type: string
+                    example: Bad Request
+        "401":
+          description: Unauthorized
+      tags:
+        - Partner
+      security:
+        - bearer: []
+  /v1/amendment:
+    post:
+      operationId: createAmendmentQuote
+      summary: Calculate the amendment cost
+      description: Generates a price quote based on specified amendment
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAmendmentQuoteDto"
+      responses:
+        "201":
+          description: The amendment quote has been successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateAmendmentQuoteResponseDto"
+        "400":
+          description: Unable to provide amendment quote for provided parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: string
+                    example: Trip start date is in the past. Trip cost cannot exceed $40,000 per
+                      person or $150,000 in total.
+        "401":
+          description: Unauthorized
+      tags:
+        - Amendment
+      security:
+        - bearer: []
+  /v1/amendment/apply/changes:
+    post:
+      operationId: applyAmendmentChanges
+      summary: Apply amendment changes
+      description: Applies the specified amendment changes to the policy
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyChangeDto"
+      responses:
+        "201":
+          description: The amendment quote has been successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateAmendmentQuoteResponseDto"
+        "400":
+          description: Unable to provide amendment quote for provided parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: string
+                    example: Trip start date is in the past. Trip cost cannot exceed $40,000 per
+                      person or $150,000 in total.
+        "401":
+          description: Unauthorized
+      tags:
+        - Amendment
+      security:
+        - bearer: []
+  /v1/amendment/cancel:
+    delete:
+      operationId: cancel
+      summary: Cancel a policy
+      description: Cancels an existing policy
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelPolicyDto"
+      responses:
+        "201":
+          description: The policy has been successfully cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelPolicyResponseDto"
+        "400":
+          description: Unable to cancel policy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error happened when cancelling the policy
+        "401":
+          description: Unauthorized
+        "404":
+          description: Policy not found
+      tags:
+        - Amendment
+      security:
+        - bearer: []
+info:
+  title: Faye Partner Sales API
+  description: Partner-facing gateway to the Empanda insurance system. Generate
+    quotes, purchase policies, and manage travel protection.
+  version: "1.0"
+  contact: {}
+tags:
+  - name: Quote
+    description: Travel protection quote
+  - name: Purchase
+    description: Travel protection purchase
+servers:
+  - url: https://partnerapi.withfaye.com
+    description: Production
+  - url: https://partnerapi.fayehq.com
+    description: Staging
+  - url: https://partnerapi.faye-dev.com
+    description: Development
+  - url: http://localhost:2999
+    description: Localhost
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+      description: add token without "Bearer " prefix
+  schemas:
+    Destination:
+      type: object
+      properties:
+        country:
+          type: string
+          description: Country code
+          example: US
+        googlePlaceId:
+          type: string
+          description: google place ID
+          example: ChIJYYOWXuckZUcRZdTiJR5FQOc
+        state:
+          type: string
+          description: State code
+          example: CA
+    StandardCoverageOptionRequestDto:
+      type: object
+      properties:
+        selected:
+          type: boolean
+          description: If this option is desired
+          example: false
+    CfarCoverageOptionRequestDto:
+      type: object
+      properties:
+        selected:
+          type: boolean
+          description: If this option is desired
+          example: false
+        initialDepositDate:
+          type: string
+          description: Initial deposit date
+          example: 2023-05-18
+    CarDateDto:
+      type: object
+      properties:
+        startDate:
+          format: date-time
+          type: string
+          description: Start date of car rental
+          example: 2023-05-18
+        endDate:
+          format: date-time
+          type: string
+          description: End date of car rental
+          example: 2023-05-19
+        noOfCars:
+          type: number
+          description: Number of cars
+          example: 1
+      required:
+        - startDate
+        - endDate
+    CarRentalCoverageRequestDto:
+      type: object
+      properties:
+        selected:
+          type: boolean
+          description: If this option is desired
+          example: false
+        carDatesDto:
+          type: array
+          items:
+            $ref: "#/components/schemas/CarDateDto"
+        noOfCars:
+          type: number
+          description: Number of cars. Defaults to 1
+          example: 2
+      required:
+        - carDatesDto
+    AddonsRequestDto:
+      type: object
+      properties:
+        petOption:
+          description: Pet coverage add-on that covers veterinary expenses or kenneling
+          allOf:
+            - $ref: "#/components/schemas/StandardCoverageOptionRequestDto"
+        trcOption:
+          description: Trip cancelation coverage is recommended to be added for every trip
+            that starts more than 72 hours from purchase. Covers up to 100% of
+            the trip cost in case of cancelation from covered reason.
+          allOf:
+            - $ref: "#/components/schemas/StandardCoverageOptionRequestDto"
+        cfarOption:
+          description: Cancel for any reason only if purchased within 14 days of your
+            initial trip deposit and the cancelation is at least 48 hours before
+            the departure date. Please do not suggest if quote is generated less
+            than 48 hours before lift-off.
+          allOf:
+            - $ref: "#/components/schemas/CfarCoverageOptionRequestDto"
+        adventureOption:
+          description: Medical and transportation coverage for participating in an
+            adventure or extreme sport.
+          allOf:
+            - $ref: "#/components/schemas/StandardCoverageOptionRequestDto"
+        vacationRentalOption:
+          description: Coverage for a vacation rental property.
+          allOf:
+            - $ref: "#/components/schemas/StandardCoverageOptionRequestDto"
+        carRentalOption:
+          description: Coverage for rented car(s). Please specify dates of rental and
+            number of cars.
+          allOf:
+            - $ref: "#/components/schemas/CarRentalCoverageRequestDto"
+    ProspectiveCustomerDto:
+      type: object
+      properties:
+        firstName:
+          type: string
+          description: First name
+          example: Jane
+        lastName:
+          type: string
+          description: Last name
+          example: Doe
+        email:
+          type: string
+          description: Email address
+          example: jane.doe@gmail.com
+        dob:
+          type: string
+          format: date
+          description: Date of birth
+          example: 1980-11-25
+      required:
+        - firstName
+        - lastName
+        - dob
+    UtmDto:
+      type: object
+      properties:
+        key:
+          type: string
+          description: UTM parameter key
+          example: utm_source
+        value:
+          type: string
+          description: UTM parameter value
+          example: google
+      required:
+        - key
+        - value
+    CreateQuoteDto:
+      type: object
+      properties:
+        advisorId:
+          type: string
+          description: A unique identifier for the agent triggering this quote
+          example: "123456"
+        departureDate:
+          type: string
+          format: date
+          description: First day of trip
+          example: 2023-05-18
+        returnDate:
+          type: string
+          format: date
+          description: Final day of trip
+          example: 2023-05-30
+        destination:
+          description: Array of travel destinations. Each destination must provide either
+            a country code (Alpha-2 format like US, AU) or googlePlaceId. State
+            (areaLevel1) is optional for US destinations.
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+        tripCost:
+          type: number
+          description: Value of non-refundable trip costs in $USD. Minimum $1000. Maximum
+            is $150,000 or $50,000 per traveler (the lower between them)
+          example: "5200"
+        coverageOptions:
+          description: >
+            Addons to add to the base coverage. 
+
+            Recommended to add trcOption for every quote that departs more than
+            72 hours from purchase.
+
+            After changing the add-ons - please call recalculate endpoint.
+
+            See https://www.withfaye.com/coverage/ for details of coverage
+          allOf:
+            - $ref: "#/components/schemas/AddonsRequestDto"
+        productId:
+          type: string
+          description: Product ID - relevant only for specific partners. Single product
+            for single quote.
+          enum:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+            - PR-CFAR-01
+            - PR-STANDARD-DO
+            - PR-SPORTS-DO
+            - PR-CFAR-DO
+            - PR-STR
+            - PR-GENERAL-STR
+            - RETAIL
+            - PR-FirstCountrywide
+            - PR-ForwardCountrywide
+            - PR-FlagshipCountrywide
+          example: PR-STANDARD-01
+        productIds:
+          description: Array of product IDs or group names for multi-quote. If provided,
+            will create quotes for all products. Can contain ProductIdEnum
+            values or group names.
+          example:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+          type: array
+          items:
+            type: string
+        productCode:
+          type: string
+          deprecated: true
+          description: The product code to quote for, this field is no longer used
+        timezone:
+          type: string
+          description: Timezone for the trip dates (IANA timezone identifier)
+          example: America/New_York
+        residence:
+          type: string
+          description: State of residence (USA) of all travelers. If some travelers are in
+            different states, please quote for each state.
+          example: CA
+        travelerDobs:
+          description: List of dates of birth of the travelers. The price is age
+            sensitive. If the full date of birth is missing, you can select Jan
+            1st of the relevant year. Either this field or travelerDetails must
+            be provided
+          example:
+            - 1965-12-01
+            - 1965-07-23
+          type: array
+          items:
+            type: number
+        travelerDetails:
+          description: >-
+            Personal details of policyholders, note: the first policyholder is
+            the primary policyholder.
+
+            Either this field or travelerDobs must be provided. Include this
+            field to get the quote page url
+          type: array
+          items:
+            $ref: "#/components/schemas/ProspectiveCustomerDto"
+        externalId:
+          type: string
+          description: The ID of the user on the partner system
+          example: Aa123
+        noTravellers:
+          type: number
+          description: The number of travellers
+          example: 2
+        utms:
+          description: UTM tracking parameters
+          type: array
+          items:
+            $ref: "#/components/schemas/UtmDto"
+      required:
+        - departureDate
+        - returnDate
+        - destination
+        - productCode
+        - residence
+        - travelerDobs
+        - travelerDetails
+    StandardCoverageOptionDto:
+      type: object
+      properties:
+        available:
+          type: boolean
+          description: If this add-on can be added to the purchase
+          example: false
+        selected:
+          type: boolean
+          description: If this add-on is selected and included in the price
+          example: false
+        price:
+          type: number
+          description: The price to purchase this coverage
+          example: 100.24
+          multipleOf: 0.01
+    CarRentalCoverageDto:
+      type: object
+      properties:
+        available:
+          type: boolean
+          description: If this add-on can be added to the purchase
+          example: false
+        selected:
+          type: boolean
+          description: If this add-on is selected and included in the price
+          example: false
+        price:
+          type: number
+          description: The price to purchase this coverage
+          example: 100.24
+          multipleOf: 0.01
+        pricePerCarPerDay:
+          type: number
+          description: The price to purchase this coverage **per car per day**
+          example: 100.24
+          multipleOf: 0.01
+      required:
+        - pricePerCarPerDay
+    AddonsDto:
+      type: object
+      properties:
+        petOption:
+          description: Pet coverage add-on that covers veterinary expenses or kenneling
+          allOf:
+            - $ref: "#/components/schemas/StandardCoverageOptionDto"
+        trcOption:
+          description: Trip cancelation coverage is recommended to be added for every trip
+            that starts more than 72 hours from purchase. Covers up to 100% of
+            the trip cost in case of cancelation from covered reason.
+          allOf:
+            - $ref: "#/components/schemas/StandardCoverageOptionDto"
+        cfarOption:
+          description: Cancel for any reason only if purchased within 14 days of your
+            initial trip deposit and the cancelation is at least 48 hours before
+            the departure date. Please do not suggest if quote is generated less
+            than 48 hours before lift-off.
+          allOf:
+            - $ref: "#/components/schemas/StandardCoverageOptionDto"
+        adventureOption:
+          description: Medical and transportation coverage for participating in an
+            adventure or extreme sport.
+          allOf:
+            - $ref: "#/components/schemas/StandardCoverageOptionDto"
+        vacationRentalOption:
+          description: Coverage for a vacation rental property.
+          allOf:
+            - $ref: "#/components/schemas/StandardCoverageOptionDto"
+        carRentalOption:
+          description: Coverage for rented car(s). Please specify dates of rental and
+            number of cars.
+          allOf:
+            - $ref: "#/components/schemas/CarRentalCoverageDto"
+      required:
+        - petOption
+        - trcOption
+        - cfarOption
+        - adventureOption
+        - vacationRentalOption
+        - carRentalOption
+    CreateQuoteResponseDto:
+      type: object
+      properties:
+        currentPrice:
+          type: number
+          description: The price for this quote is in $USD, including all selected add-ons.
+          example: 100.24
+          multipleOf: 0.01
+        coverageOptions:
+          description: Available and selected options for this quote. Note, that some
+            add-ons effect the price of other add-ons, so make sure to call
+            recalculate endpoint after adding each add-on.
+          allOf:
+            - $ref: "#/components/schemas/AddonsDto"
+        policyExampleUrl:
+          type: string
+          description: URL to a PDF document of an example policy. Policy examples change
+            based on the state of residency and whether the trip is domestic or
+            international. By the regulation, it is mandatory to allow the
+            traveler to review an example policy before purchasing.
+        quoteUrl:
+          type: string
+          description: URL to a printable version of the quote, which highlights the
+            coverage options and price for that specific quote.
+        quotePageUrl:
+          type: string
+          description: URL to the web page for purchasing the quote
+        quoteHash:
+          type: string
+          description: Quote hash identifier for this quote
+          example: abc123def456
+      required:
+        - currentPrice
+        - coverageOptions
+        - policyExampleUrl
+        - quoteUrl
+        - quotePageUrl
+        - quoteHash
+    CreateMultiQuoteDto:
+      type: object
+      properties:
+        advisorId:
+          type: string
+          description: A unique identifier for the agent triggering this quote
+          example: "123456"
+        departureDate:
+          type: string
+          format: date
+          description: First day of trip
+          example: 2023-05-18
+        returnDate:
+          type: string
+          format: date
+          description: Final day of trip
+          example: 2023-05-30
+        destination:
+          description: Array of travel destinations. Each destination must provide either
+            a country code (Alpha-2 format like US, AU) or googlePlaceId. State
+            (areaLevel1) is optional for US destinations.
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+        tripCost:
+          type: number
+          description: Value of non-refundable trip costs in $USD. Minimum $1000. Maximum
+            is $150,000 or $50,000 per traveler (the lower between them)
+          example: "5200"
+        coverageOptions:
+          description: >
+            Addons to add to the base coverage. 
+
+            Recommended to add trcOption for every quote that departs more than
+            72 hours from purchase.
+
+            After changing the add-ons - please call recalculate endpoint.
+
+            See https://www.withfaye.com/coverage/ for details of coverage
+          allOf:
+            - $ref: "#/components/schemas/AddonsRequestDto"
+        productId:
+          type: string
+          description: Product ID is not allowed for multi-quote. Use productIds instead.
+          enum:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+            - PR-CFAR-01
+            - PR-STANDARD-DO
+            - PR-SPORTS-DO
+            - PR-CFAR-DO
+            - PR-STR
+            - PR-GENERAL-STR
+            - RETAIL
+            - PR-FirstCountrywide
+            - PR-ForwardCountrywide
+            - PR-FlagshipCountrywide
+          example: PR-STANDARD-01
+        productIds:
+          description: Array of product IDs or group names for multi-quote. Required for
+            multi-quote endpoint. Must contain at least 1 product. Can contain
+            ProductIdEnum values or group names.
+          example:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+          type: array
+          items:
+            type: string
+        productCode:
+          type: string
+          deprecated: true
+          description: The product code to quote for, this field is no longer used
+        timezone:
+          type: string
+          description: Timezone for the trip dates (IANA timezone identifier)
+          example: America/New_York
+        residence:
+          type: string
+          description: State of residence (USA) of all travelers. If some travelers are in
+            different states, please quote for each state.
+          example: CA
+        travelerDobs:
+          description: List of dates of birth of the travelers. The price is age
+            sensitive. If the full date of birth is missing, you can select Jan
+            1st of the relevant year. Either this field or travelerDetails must
+            be provided
+          example:
+            - 1965-12-01
+            - 1965-07-23
+          type: array
+          items:
+            type: number
+        travelerDetails:
+          description: >-
+            Personal details of policyholders, note: the first policyholder is
+            the primary policyholder.
+
+            Either this field or travelerDobs must be provided. Include this
+            field to get the quote page url
+          type: array
+          items:
+            $ref: "#/components/schemas/ProspectiveCustomerDto"
+        externalId:
+          type: string
+          description: The ID of the user on the partner system
+          example: Aa123
+        noTravellers:
+          type: number
+          description: The number of travellers
+          example: 2
+        utms:
+          description: UTM tracking parameters
+          type: array
+          items:
+            $ref: "#/components/schemas/UtmDto"
+      required:
+        - departureDate
+        - returnDate
+        - destination
+        - productCode
+        - residence
+        - travelerDobs
+        - travelerDetails
+    MultiQuoteItemDto:
+      type: object
+      properties:
+        product:
+          type: string
+          enum:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+            - PR-CFAR-01
+            - PR-STANDARD-DO
+            - PR-SPORTS-DO
+            - PR-CFAR-DO
+            - PR-STR
+            - PR-GENERAL-STR
+            - RETAIL
+            - PR-FirstCountrywide
+            - PR-ForwardCountrywide
+            - PR-FlagshipCountrywide
+          description: Product ID for this quote
+        quote:
+          description: Quote details. Only present when there is no error.
+          allOf:
+            - $ref: "#/components/schemas/CreateQuoteResponseDto"
+        status:
+          type: string
+          enum:
+            - offer
+            - quote
+          description: Status of the quote - "offer" or "quote"
+        error:
+          type: string
+          description: Error message if recalculation failed for this quote
+      required:
+        - product
+    MultiQuoteResponseDto:
+      type: object
+      properties:
+        groupHash:
+          type: string
+          description: The group_hash linking all quotes
+        quotes:
+          description: Array of quotes in the group
+          type: array
+          items:
+            $ref: "#/components/schemas/MultiQuoteItemDto"
+        isCompleted:
+          type: boolean
+          description: Whether the group was purchased
+      required:
+        - quotes
+    PlaceDetailsDtoV2:
+      type: object
+      properties:
+        country:
+          type: string
+          description: Country code (ISO 3166-1 alpha-2)
+          example: FR
+          minLength: 2
+          maxLength: 2
+          nullable: true
+        areaLevel1:
+          type: string
+          description: State or province code
+          example: CA
+          nullable: true
+        locality:
+          type: string
+          description: City or locality
+          example: Paris
+          nullable: true
+        label:
+          type: string
+          description: Human-readable label for the place
+          example: Paris, France
+          nullable: true
+        googleId:
+          type: string
+          description: Google Place ID
+          nullable: true
+        fullCountryName:
+          type: string
+          description: Full country name
+          nullable: true
+    ResidencyDtoV2:
+      type: object
+      properties:
+        country:
+          type: string
+          description: Country code (ISO 3166-1 alpha-2)
+          example: FR
+          minLength: 2
+          maxLength: 2
+          nullable: true
+        areaLevel1:
+          type: string
+          description: State or province code (mandatory in residency)
+          example: CA
+          nullable: true
+        locality:
+          type: string
+          description: City or locality
+          example: Paris
+          nullable: true
+        label:
+          type: string
+          description: Human-readable label for the place
+          example: Paris, France
+          nullable: true
+        googleId:
+          type: string
+          description: Google Place ID
+          nullable: true
+        fullCountryName:
+          type: string
+          description: Full country name
+          nullable: true
+        streetAndNumber:
+          type: string
+          description: Street address and number
+          example: 123 Main St
+          nullable: true
+        apartment:
+          type: string
+          description: Apartment or unit number
+          example: Apt 4B
+          nullable: true
+        zipCode:
+          type: string
+          description: ZIP or postal code
+          example: "94102"
+          nullable: true
+    TravellerDtoV2:
+      type: object
+      properties:
+        dateOfBirth:
+          format: date-time
+          type: string
+          description: Date of birth
+          example: 1985-05-15
+        firstName:
+          type: string
+          description: First name
+          example: John
+        email:
+          type: string
+          description: Email address
+          example: john.doe@example.com
+        lastName:
+          type: string
+          description: Last name
+          example: Doe
+        isDriver:
+          type: boolean
+          description: Whether the traveller is a driver
+          example: false
+        mainTraveller:
+          type: boolean
+          description: Whether this is the main traveller
+          example: true
+        profileImage:
+          type: string
+          description: Profile image URL or presigned URL
+        isPlaceHolderTraveller:
+          type: boolean
+          description: Whether this is a placeholder traveller
+      required:
+        - dateOfBirth
+        - firstName
+        - lastName
+        - isDriver
+        - mainTraveller
+    CreateQuoteDtoV2:
+      type: object
+      properties:
+        advisorId:
+          type: string
+          description: A unique identifier for the agent triggering this quote
+          example: "123456"
+        departureDate:
+          type: string
+          format: date
+          description: First day of trip (V1 format). Either departureDate or
+            tripStartDate must be provided.
+          example: 2023-05-18
+        returnDate:
+          type: string
+          format: date
+          description: Final day of trip (V1 format). Either returnDate or tripEndDate
+            must be provided.
+          example: 2023-05-30
+        destination:
+          description: Array of travel destinations (V1 format). Either destination or
+            destinations must be provided. Each destination must provide either
+            a country code (Alpha-2 format like US, AU) or googlePlaceId. State
+            (areaLevel1) is optional for US destinations.
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+        tripCost:
+          type: number
+          description: Value of non-refundable trip costs in $USD. Minimum $1000. Maximum
+            is $150,000 or $50,000 per traveler (the lower between them)
+          example: "5200"
+        coverageOptions:
+          description: >
+            Addons to add to the base coverage. 
+
+            Recommended to add trcOption for every quote that departs more than
+            72 hours from purchase.
+
+            After changing the add-ons - please call recalculate endpoint.
+
+            See https://www.withfaye.com/coverage/ for details of coverage
+          allOf:
+            - $ref: "#/components/schemas/AddonsRequestDto"
+        productId:
+          type: string
+          description: Product ID - relevant only for specific partners. Single product
+            for single quote.
+          enum:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+            - PR-CFAR-01
+            - PR-STANDARD-DO
+            - PR-SPORTS-DO
+            - PR-CFAR-DO
+            - PR-STR
+            - PR-GENERAL-STR
+            - RETAIL
+            - PR-FirstCountrywide
+            - PR-ForwardCountrywide
+            - PR-FlagshipCountrywide
+          example: PR-STANDARD-01
+        productIds:
+          description: Array of product IDs or group names for multi-quote. If provided,
+            will create quotes for all products. Can contain ProductIdEnum
+            values or group names.
+          example:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+          type: array
+          items:
+            type: string
+        productCode:
+          type: string
+          deprecated: true
+          description: The product code to quote for, this field is no longer used
+        timezone:
+          type: string
+          description: Timezone for the trip dates (IANA timezone identifier)
+          example: America/New_York
+        tripStartDate:
+          type: string
+          description: Start date of the trip in ISO format (V2 format). Either
+            departureDate or tripStartDate must be provided.
+          example: 2024-06-15
+        tripEndDate:
+          type: string
+          description: End date of the trip in ISO format (V2 format). Either returnDate
+            or tripEndDate must be provided.
+          example: 2024-06-30
+        destinations:
+          description: List of destinations (V2 format). Either destination or
+            destinations must be provided.
+          type: array
+          items:
+            $ref: "#/components/schemas/PlaceDetailsDtoV2"
+        product:
+          type: string
+          description: Type of policy product (mapped from productId). Single product for
+            single quote.
+          enum:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+            - PR-CFAR-01
+            - PR-STANDARD-DO
+            - PR-SPORTS-DO
+            - PR-CFAR-DO
+            - PR-STR
+            - PR-GENERAL-STR
+            - RETAIL
+            - PR-FirstCountrywide
+            - PR-ForwardCountrywide
+            - PR-FlagshipCountrywide
+          example: PR-STANDARD-01
+        products:
+          description: Array of policy products or group names (V2 format). Same as
+            productIds - one of productId, productIds, product, or products must
+            be provided. Can contain ProductIdEnum values or group names.
+          example:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+          type: array
+          items:
+            type: string
+        residence:
+          type: string
+          description: Residence information (backward compatibility - accepts string). If
+            provided, it will be used as areaLevel1 in residency. Either
+            residence (string) or residency must be provided.
+          example: CA
+        residency:
+          description: Residency details. areaLevel1 is mandatory, all other fields are
+            optional. Either residence (string) or residency must be provided.
+          allOf:
+            - $ref: "#/components/schemas/ResidencyDtoV2"
+        travellers:
+          description: List of travellers
+          type: array
+          items:
+            $ref: "#/components/schemas/TravellerDtoV2"
+        travelerDetails:
+          description: "Personal details of policyholders (V1 format). Will be converted
+            to travellers if travellers is not provided. Note: the first
+            policyholder is the primary policyholder."
+          type: array
+          items:
+            $ref: "#/components/schemas/ProspectiveCustomerDto"
+        policyCodeHash:
+          type: string
+          description: Policy code hash
+        utms:
+          description: UTM tracking parameters
+          type: array
+          items:
+            $ref: "#/components/schemas/UtmDto"
+        noTravellers:
+          type: number
+          description: The number of travellers
+          example: 2
+      required:
+        - productCode
+        - tripStartDate
+        - tripEndDate
+        - destinations
+        - travellers
+        - travelerDetails
+    CreateMultiQuoteDtoV2:
+      type: object
+      properties:
+        advisorId:
+          type: string
+          description: A unique identifier for the agent triggering this quote
+          example: "123456"
+        departureDate:
+          type: string
+          format: date
+          description: First day of trip (V1 format). Either departureDate or
+            tripStartDate must be provided.
+          example: 2023-05-18
+        returnDate:
+          type: string
+          format: date
+          description: Final day of trip (V1 format). Either returnDate or tripEndDate
+            must be provided.
+          example: 2023-05-30
+        destination:
+          description: Array of travel destinations (V1 format). Either destination or
+            destinations must be provided. Each destination must provide either
+            a country code (Alpha-2 format like US, AU) or googlePlaceId. State
+            (areaLevel1) is optional for US destinations.
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+        tripCost:
+          type: number
+          description: Value of non-refundable trip costs in $USD. Minimum $1000. Maximum
+            is $150,000 or $50,000 per traveler (the lower between them)
+          example: "5200"
+        coverageOptions:
+          description: >
+            Addons to add to the base coverage. 
+
+            Recommended to add trcOption for every quote that departs more than
+            72 hours from purchase.
+
+            After changing the add-ons - please call recalculate endpoint.
+
+            See https://www.withfaye.com/coverage/ for details of coverage
+          allOf:
+            - $ref: "#/components/schemas/AddonsRequestDto"
+        productId:
+          type: string
+          description: Product ID is not allowed for multi-quote. Use productIds or
+            products instead.
+          enum:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+            - PR-CFAR-01
+            - PR-STANDARD-DO
+            - PR-SPORTS-DO
+            - PR-CFAR-DO
+            - PR-STR
+            - PR-GENERAL-STR
+            - RETAIL
+            - PR-FirstCountrywide
+            - PR-ForwardCountrywide
+            - PR-FlagshipCountrywide
+          example: PR-STANDARD-01
+        productIds:
+          description: Array of product IDs or group names for multi-quote (from base
+            class). Required for multi-quote endpoint. Must contain at least 1
+            product. Can contain ProductIdEnum values or group names.
+          example:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+          type: array
+          items:
+            type: string
+        productCode:
+          type: string
+          deprecated: true
+          description: The product code to quote for, this field is no longer used
+        timezone:
+          type: string
+          description: Timezone for the trip dates (IANA timezone identifier)
+          example: America/New_York
+        tripStartDate:
+          type: string
+          description: Start date of the trip in ISO format (V2 format). Either
+            departureDate or tripStartDate must be provided.
+          example: 2024-06-15
+        tripEndDate:
+          type: string
+          description: End date of the trip in ISO format (V2 format). Either returnDate
+            or tripEndDate must be provided.
+          example: 2024-06-30
+        destinations:
+          description: List of destinations (V2 format). Either destination or
+            destinations must be provided.
+          type: array
+          items:
+            $ref: "#/components/schemas/PlaceDetailsDtoV2"
+        product:
+          type: string
+          description: Product is not allowed for multi-quote. Use productIds or products
+            instead.
+          enum:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+            - PR-CFAR-01
+            - PR-STANDARD-DO
+            - PR-SPORTS-DO
+            - PR-CFAR-DO
+            - PR-STR
+            - PR-GENERAL-STR
+            - RETAIL
+            - PR-FirstCountrywide
+            - PR-ForwardCountrywide
+            - PR-FlagshipCountrywide
+          example: PR-STANDARD-01
+        products:
+          description: Array of policy products or group names for multi-quote (V2
+            format). Same as productIds. Required for multi-quote endpoint. Must
+            contain at least 1 product. Can contain ProductIdEnum values or
+            group names.
+          example:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+          type: array
+          items:
+            type: string
+        residence:
+          type: string
+          description: Residence information (backward compatibility - accepts string). If
+            provided, it will be used as areaLevel1 in residency. Either
+            residence (string) or residency must be provided.
+          example: CA
+        residency:
+          description: Residency details. areaLevel1 is mandatory, all other fields are
+            optional. Either residence (string) or residency must be provided.
+          allOf:
+            - $ref: "#/components/schemas/ResidencyDtoV2"
+        travellers:
+          description: List of travellers
+          type: array
+          items:
+            $ref: "#/components/schemas/TravellerDtoV2"
+        travelerDetails:
+          description: "Personal details of policyholders (V1 format). Will be converted
+            to travellers if travellers is not provided. Note: the first
+            policyholder is the primary policyholder."
+          type: array
+          items:
+            $ref: "#/components/schemas/ProspectiveCustomerDto"
+        policyCodeHash:
+          type: string
+          description: Policy code hash
+        utms:
+          description: UTM tracking parameters
+          type: array
+          items:
+            $ref: "#/components/schemas/UtmDto"
+        noTravellers:
+          type: number
+          description: The number of travellers
+          example: 2
+      required:
+        - productCode
+        - tripStartDate
+        - tripEndDate
+        - destinations
+        - travellers
+        - travelerDetails
+    RecalculateRequest:
+      type: object
+      properties:
+        advisorId:
+          type: string
+          description: A unique identifier for the agent triggering this quote
+          example: "123456"
+        departureDate:
+          type: string
+          format: date
+          description: First day of trip
+          example: 2023-05-18
+        returnDate:
+          type: string
+          format: date
+          description: Final day of trip
+          example: 2023-05-30
+        destination:
+          description: Array of travel destinations. Each destination must provide either
+            a country code (Alpha-2 format like US, AU) or googlePlaceId. State
+            (areaLevel1) is optional for US destinations.
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+        tripCost:
+          type: number
+          description: Value of non-refundable trip costs in $USD. Minimum $1000. Maximum
+            is $150,000 or $50,000 per traveler (the lower between them)
+          example: "5200"
+        coverageOptions:
+          description: >
+            Addons to add to the base coverage. 
+
+            Recommended to add trcOption for every quote that departs more than
+            72 hours from purchase.
+
+            After changing the add-ons - please call recalculate endpoint.
+
+            See https://www.withfaye.com/coverage/ for details of coverage
+          allOf:
+            - $ref: "#/components/schemas/AddonsRequestDto"
+        productId:
+          type: string
+          description: Product ID - relevant only for specific partners. Single product
+            for single quote.
+          enum:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+            - PR-CFAR-01
+            - PR-STANDARD-DO
+            - PR-SPORTS-DO
+            - PR-CFAR-DO
+            - PR-STR
+            - PR-GENERAL-STR
+            - RETAIL
+            - PR-FirstCountrywide
+            - PR-ForwardCountrywide
+            - PR-FlagshipCountrywide
+          example: PR-STANDARD-01
+        productIds:
+          description: Array of product IDs or group names for multi-quote. If provided,
+            will create quotes for all products. Can contain ProductIdEnum
+            values or group names.
+          example:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+          type: array
+          items:
+            type: string
+        productCode:
+          type: string
+          deprecated: true
+          description: The product code to quote for, this field is no longer used
+        timezone:
+          type: string
+          description: Timezone for the trip dates (IANA timezone identifier)
+          example: America/New_York
+        residence:
+          type: string
+          description: State of residence (USA) of all travelers. If some travelers are in
+            different states, please quote for each state.
+          example: CA
+        travelerDobs:
+          description: List of dates of birth of the travelers. The price is age
+            sensitive. If the full date of birth is missing, you can select Jan
+            1st of the relevant year. Either this field or travelerDetails must
+            be provided
+          example:
+            - 1965-12-01
+            - 1965-07-23
+          type: array
+          items:
+            type: number
+        travelerDetails:
+          description: >-
+            Personal details of policyholders, note: the first policyholder is
+            the primary policyholder.
+
+            Either this field or travelerDobs must be provided. Include this
+            field to get the quote page url
+          type: array
+          items:
+            $ref: "#/components/schemas/ProspectiveCustomerDto"
+        externalId:
+          type: string
+          description: The ID of the user on the partner system
+          example: Aa123
+        noTravellers:
+          type: number
+          description: The number of travellers
+          example: 2
+        utms:
+          description: UTM tracking parameters
+          type: array
+          items:
+            $ref: "#/components/schemas/UtmDto"
+      required:
+        - departureDate
+        - returnDate
+        - destination
+        - productCode
+        - residence
+        - travelerDobs
+        - travelerDetails
+    RequestCoverageDto:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Type of coverage
+          enum:
+            - always
+            - basePackage
+            - baggageBase
+            - medicalCoverage
+            - generalTrip
+            - tripInterruption
+            - tripCancellation
+            - tripCancellationAndInterruption
+            - extraCostForTripsOver20K
+            - car
+            - pet
+            - cancelForAnyReason
+            - baggageExtraCare
+            - travelDelay
+            - travelInconvenience
+            - baggageAndPersonalEffects
+            - baggageDelay
+            - missedTripConnection
+            - vacationRental
+            - sportsExtreme
+            - extraDaysCharge
+            - singleOccupancySupplement
+            - sportsEquipmentRental
+            - vehicleBreakdownAndDisablement
+            - rentalPropertyDamage
+            - rentalCarPackaged
+            - lostStolenOrDamagedLuggage
+            - rentalCarCollisionDamage
+            - flightDelayInconvenience
+        isSelected:
+          type: boolean
+          description: Whether this coverage is selected
+          example: true
+        dates:
+          description: Car rental dates - only used when type is "car"
+          type: array
+          items:
+            $ref: "#/components/schemas/CarDateDto"
+        initialDepositDate:
+          format: date-time
+          type: string
+          description: Initial deposit date for CFAR coverage - only used when type is
+            "cancelForAnyReason"
+          example: 2024-06-01
+      required:
+        - type
+        - isSelected
+    RecalculateQuoteDtoV2:
+      type: object
+      properties:
+        quoteHash:
+          type: string
+          description: Quote hash identifier. Either quoteHash or groupHash must be
+            provided.
+          example: abc123def456
+        groupHash:
+          type: string
+          description: Group hash identifier for multi-quote. Either quoteHash or
+            groupHash must be provided.
+          example: group123def456
+        addons:
+          description: List of coverage options. Use CarCoverageDto for car coverage,
+            CFARCoverageDto for CFAR coverage, otherwise RequestCoverageDto.
+            Cannot be used together with coverageOptions.
+          type: array
+          items:
+            $ref: "#/components/schemas/RequestCoverageDto"
+        coverageOptions:
+          description: Addons to add to the base coverage. Cannot be used together with
+            addons.
+          allOf:
+            - $ref: "#/components/schemas/AddonsRequestDto"
+        tripCost:
+          type: number
+          description: Cost of the trip
+          example: 5000
+        isAmendment:
+          type: boolean
+          description: Whether this is an amendment
+          example: false
+    PartnerProduct:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+    AddressDto:
+      type: object
+      properties:
+        addressLine1:
+          type: string
+          description: Address line 1
+          example: 123 Main St
+        addressLine2:
+          type: string
+          description: Address line 2
+          example: Apt 1
+        city:
+          type: string
+          description: City
+          example: San Francisco
+        state:
+          type: string
+          description: State
+          example: CA
+        zip:
+          type: string
+          description: Zip code
+          example: "94105"
+        country:
+          type: string
+          description: Country (2 letter code)
+          example: US
+      required:
+        - addressLine1
+        - city
+        - state
+        - zip
+        - country
+    CreatePurchaseDto:
+      type: object
+      properties:
+        advisorId:
+          type: string
+          description: A unique identifier for the agent triggering this quote
+          example: "123456"
+        departureDate:
+          type: string
+          format: date
+          description: First day of trip
+          example: 2023-05-18
+        returnDate:
+          type: string
+          format: date
+          description: Final day of trip
+          example: 2023-05-30
+        destination:
+          description: Array of travel destinations. Each destination must provide either
+            a country code (Alpha-2 format like US, AU) or googlePlaceId. State
+            (areaLevel1) is optional for US destinations.
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+        tripCost:
+          type: number
+          description: Value of non-refundable trip costs in $USD. Minimum $1000. Maximum
+            is $150,000 or $50,000 per traveler (the lower between them)
+          example: "5200"
+        coverageOptions:
+          description: >
+            Addons to add to the base coverage. 
+
+            Recommended to add trcOption for every quote that departs more than
+            72 hours from purchase.
+
+            After changing the add-ons - please call recalculate endpoint.
+
+            See https://www.withfaye.com/coverage/ for details of coverage
+          allOf:
+            - $ref: "#/components/schemas/AddonsRequestDto"
+        productId:
+          type: string
+          description: Product ID - relevant only for specific partners. Single product
+            for single quote.
+          enum:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+            - PR-CFAR-01
+            - PR-STANDARD-DO
+            - PR-SPORTS-DO
+            - PR-CFAR-DO
+            - PR-STR
+            - PR-GENERAL-STR
+            - RETAIL
+            - PR-FirstCountrywide
+            - PR-ForwardCountrywide
+            - PR-FlagshipCountrywide
+          example: PR-STANDARD-01
+        productIds:
+          description: Array of product IDs or group names for multi-quote. If provided,
+            will create quotes for all products. Can contain ProductIdEnum
+            values or group names.
+          example:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+          type: array
+          items:
+            type: string
+        productCode:
+          type: string
+          deprecated: true
+          description: The product code to quote for, this field is no longer used
+        timezone:
+          type: string
+          description: Timezone for the trip dates (IANA timezone identifier)
+          example: America/New_York
+        address:
+          description: Main policy holder residence address.
+          allOf:
+            - $ref: "#/components/schemas/AddressDto"
+        primaryEmail:
+          type: string
+          description: An email from the main policyholder. This is used to issue the
+            policy and to communicate with the traveler.
+          example: bob@example.com
+        travelerDetails:
+          description: Details of the travelers, where the first traveler is the main
+            policy holder.
+          type: array
+          items:
+            $ref: "#/components/schemas/ProspectiveCustomerDto"
+        paymentToken:
+          type: string
+          description: Token to charge payment method
+          example: tok_1H4qXp2eZvKYlo2CgqjQ1J4Y
+        paymentIntent:
+          type: string
+          description: Token intent to confirm
+          example: pi_3MtweELkdIwHu7ix0Dt0gF2H
+        paymentMethod:
+          type: string
+          description: Payment method token
+          example: pm_3MtweELkdIwHu7ix0Dt0gF2H
+        paymentCustomerId:
+          type: string
+          description: Customer id for payment service
+          example: cus_3MtweELkdIwHu7ix0Dt0gF2H
+        paymentService:
+          type: string
+          description: Payment service used to issue payment token
+          example: stripe
+          default: checkOut
+          enum:
+            - stripe
+            - checkOut
+        expectedPrice:
+          type: number
+          description: Expected price for the policy. Please call quote endpoint to
+            generate the expected price. If the gap between the expected price
+            and the actual price is off by more than 1 cent - the request will
+            fail. This is to avoid false charges.
+          example: 375.35
+        externalId:
+          type: string
+          description: The ID of the user on the partner system
+          example: Aa123
+        noTravellers:
+          type: number
+          description: The number of travellers
+          example: 2
+        utms:
+          description: UTM tracking parameters
+          type: array
+          items:
+            $ref: "#/components/schemas/UtmDto"
+      required:
+        - departureDate
+        - returnDate
+        - destination
+        - productCode
+        - address
+        - primaryEmail
+        - travelerDetails
+        - expectedPrice
+    PolicyholderDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Policyholder Name
+          example: Bob Smith
+        planId:
+          type: string
+          description: Policy Number
+          example: P23-1234-1
+      required:
+        - name
+        - planId
+    PurchasePolicyDto:
+      type: object
+      properties:
+        purchaseId:
+          type: string
+          description: Policy ID of all travelers
+          example: P23-1234
+        plans:
+          description: An object of a policy ID for each traveler.
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyholderDto"
+        totalPrice:
+          type: number
+          description: The price that was charged
+          example: 100.24
+          multipleOf: 0.01
+        paymentIntent:
+          type: string
+          description: Payment intent token of the purchase
+          example: pi_3MtweELkdIwHu7ix0Dt0gF2H
+        policyUrl:
+          type: string
+          description: URL to download the policy
+          example: https://example.com/policy.pdf
+        receiptUrl:
+          type: string
+          description: URL to download the receipt
+          example: https://example.com/receipt.pdf
+      required:
+        - purchaseId
+        - totalPrice
+    PaymentInfoDtoV2:
+      type: object
+      properties:
+        quoteId:
+          type: number
+        paymentToken:
+          type: string
+        paymentIntent:
+          type: string
+        paymentMethod:
+          type: string
+        customer:
+          type: string
+        paymentIp:
+          type: string
+        paymentMethodNonce:
+          type: string
+        paymentService:
+          type: string
+          enum:
+            - stripe
+            - checkOut
+          description: Payment service - required field
+        useVoucher:
+          type: boolean
+          description: Whether to use voucher, defaults to false if not provided
+          default: false
+        purchasePaymentType:
+          type: string
+          enum:
+            - full
+            - deposit
+        validateIntentAmount:
+          type: boolean
+        companyId:
+          type: number
+      required:
+        - paymentService
+    OsInfoDtoV2:
+      type: object
+      properties:
+        customerTZ:
+          type: string
+        operationSystem:
+          type: string
+        osVersion:
+          type: string
+      required:
+        - customerTZ
+        - operationSystem
+        - osVersion
+    SaveAndPayDtoV2:
+      type: object
+      properties:
+        paymentInfo:
+          description: Payment information
+          allOf:
+            - $ref: "#/components/schemas/PaymentInfoDtoV2"
+        policyCodeHash:
+          type: string
+          description: Policy code hash (quote hash)
+          example: abc123def456
+        osInfoDto:
+          description: Operating system information
+          allOf:
+            - $ref: "#/components/schemas/OsInfoDtoV2"
+        tripCost:
+          type: number
+          description: Optional trip cost for recalculation
+          example: 7500
+        addons:
+          description: Optional coverage addons for recalculation
+          type: array
+          items:
+            $ref: "#/components/schemas/RequestCoverageDto"
+      required:
+        - paymentInfo
+        - policyCodeHash
+    ApiAdvisorDto:
+      type: object
+      properties:
+        advisorId:
+          type: string
+          description: The identity of the advisor is set by the partner.
+          example: abcd1234
+        firstName:
+          type: string
+          description: First name. Mandatory for advisor creation
+          example: Jane
+        lastName:
+          type: string
+          description: Last name. Mandatory for advisor creation
+          example: Foster
+        email:
+          type: string
+          description: Advisor's email. Mandatory for advisor creation
+          example: abcd@gmail.com
+        website:
+          type: string
+          description: Advisor website
+          example: https://www.advisor-website.com
+        trainingDate:
+          type: string
+          format: date
+          description: Last date the advisor has done the mandatory training
+          example: 2023-04-18
+      required:
+        - advisorId
+        - firstName
+        - lastName
+        - email
+        - trainingDate
+    AdvisorResponseDto:
+      type: object
+      properties:
+        advisorId:
+          type: string
+        trainingDate:
+          type: string
+          format: date
+          example: 2023-04-18
+        email:
+          type: string
+        lastName:
+          type: string
+        firstName:
+          type: string
+        website:
+          type: string
+        status:
+          type: string
+          description: Active or disabled.
+      required:
+        - advisorId
+        - trainingDate
+        - email
+        - lastName
+        - firstName
+        - website
+        - status
+    DefaultExceptionForSwagger:
+      type: object
+      properties:
+        statusCode:
+          type: number
+          description: HTTP status code
+          example: 404
+        message:
+          type: string
+          description: Error details
+          example: The requested resource was not found
+        error:
+          type: string
+          description: Error message
+          example: Not Found
+      required:
+        - statusCode
+        - message
+        - error
+    DeleteAdvisorRequest:
+      type: object
+      properties:
+        advisorId:
+          type: string
+          description: External advisor ID
+        reason:
+          type: string
+          description: Reason for deletion. Not mandatory
+      required:
+        - advisorId
+    DeleteAdvisorResponse:
+      type: object
+      properties:
+        advisorId:
+          type: string
+          description: External advisor ID
+        status:
+          type: string
+      required:
+        - advisorId
+        - status
+    PolicyTraveler:
+      type: object
+      properties:
+        policyId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+        email:
+          type: string
+      required:
+        - policyId
+        - firstName
+        - lastName
+        - dateOfBirth
+        - email
+    PolicyGroup:
+      type: object
+      properties:
+        created:
+          format: date-time
+          type: string
+        groupCode:
+          type: string
+        status:
+          type: string
+        cancelReason:
+          type: string
+        productId:
+          type: string
+          enum:
+            - PR-STANDARD-01
+            - PR-SPORTS-01
+            - PR-CFAR-01
+            - PR-STANDARD-DO
+            - PR-SPORTS-DO
+            - PR-CFAR-DO
+            - PR-STR
+            - PR-GENERAL-STR
+            - RETAIL
+            - PR-FirstCountrywide
+            - PR-ForwardCountrywide
+            - PR-FlagshipCountrywide
+        tripCost:
+          type: number
+        purchaseDate:
+          format: date-time
+          type: string
+        departureDate:
+          format: date-time
+          type: string
+        returnDate:
+          format: date-time
+          type: string
+        destination:
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+        premium:
+          type: number
+        advisorId:
+          type: string
+        advisorEmail:
+          type: string
+        policyURL:
+          type: string
+        policiesInGroup:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyTraveler"
+      required:
+        - created
+        - groupCode
+        - status
+        - tripCost
+        - purchaseDate
+        - departureDate
+        - returnDate
+        - destination
+        - premium
+        - advisorId
+        - advisorEmail
+        - policyURL
+        - policiesInGroup
+    GetPolicyResponse:
+      type: object
+      properties:
+        policy:
+          $ref: "#/components/schemas/PolicyGroup"
+        relatedPolicies:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyGroup"
+      required:
+        - policy
+        - relatedPolicies
+    PartnersTypeEnum:
+      type: string
+      description: Type of partners
+      enum:
+        - consortium
+        - hostAgency
+        - agency
+    TeamEnum:
+      type: string
+      description: Team of the partner
+      enum:
+        - west
+        - east
+        - midAmerica
+        - PM
+        - nonUS
+    CreatePartnerDto:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/PartnersTypeEnum"
+        email:
+          type: string
+        accountManagerEmail:
+          type: string
+        primaryAdmEmail:
+          type: string
+        state:
+          type: string
+        consortiumName:
+          type: string
+        externalId:
+          type: string
+        source:
+          type: object
+          description: "The source of the data example: salesforce"
+        team:
+          $ref: "#/components/schemas/TeamEnum"
+        partnerIdentifier:
+          type: string
+          description: Partner Identifier
+        api:
+          type: boolean
+          description: Flag indicating if this is an API partner
+        utm_source:
+          type: string
+          description: UTM source for API partners
+        utm_medium:
+          type: string
+          description: UTM medium for API partners
+        insuranceProducts:
+          type: array
+          items:
+            type: string
+        defaultInsuranceProduct:
+          type: string
+      required:
+        - name
+        - type
+        - accountManagerEmail
+        - state
+    UpdatePartnerDto:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        accountManagerEmail:
+          type: string
+        primaryAdmEmail:
+          type: string
+        state:
+          type: string
+        consortiumName:
+          type: string
+        externalId:
+          type: string
+        source:
+          type: object
+          description: "The source of the data example: salesforce"
+        team:
+          $ref: "#/components/schemas/TeamEnum"
+        partnerIdentifier:
+          type: string
+          description: Partner Identifier
+        api:
+          type: boolean
+          description: Flag indicating if this is an API partner
+        utm_source:
+          type: string
+          description: UTM source for API partners
+        utm_medium:
+          type: string
+          description: UTM medium for API partners
+        insuranceProducts:
+          type: array
+          items:
+            type: string
+        defaultInsuranceProduct:
+          type: string
+      required:
+        - externalId
+    CreateAmendmentQuoteDto:
+      type: object
+      properties:
+        tripCost:
+          type: number
+        tripStartDate:
+          format: date-time
+          type: string
+        tripEndDate:
+          format: date-time
+          type: string
+        policyCode:
+          type: string
+      required:
+        - policyCode
+    CreateAmendmentQuoteResponseDto:
+      type: object
+      properties:
+        oldPrice:
+          type: number
+        newPrice:
+          type: number
+        diff:
+          type: number
+        changeKey:
+          type: string
+        expiration:
+          type: number
+      required:
+        - oldPrice
+        - newPrice
+        - diff
+        - changeKey
+        - expiration
+    ApplyChangeDto:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Payment token for that was created by the payment provider
+        changeKey:
+          type: string
+          description: The change key that was returned by the create amendment quote
+        policyCode:
+          type: string
+          description: The policy code to cancel
+          example: POLICY-123456
+      required:
+        - token
+        - changeKey
+        - policyCode
+    CancelPolicyDto:
+      type: object
+      properties:
+        policyCode:
+          type: string
+          description: The policy code to cancel
+          example: POLICY-123456
+        reason:
+          type: string
+          description: The reason for cancellation
+          example: Customer requested cancellation
+      required:
+        - policyCode
+        - reason
+    CancelPolicyResponseDto:
+      type: object
+      properties:
+        policyCode:
+          type: string
+          description: The policy code that was cancelled
+          example: POLICY-123456
+        status:
+          type: string
+          description: The status of the policy after cancellation
+          example: canceled
+          enum:
+            - active
+            - canceled
+        cancelReason:
+          type: string
+          description: The reason for cancellation
+          example: Customer requested cancellation
+        cancelledAt:
+          format: date-time
+          type: string
+          description: The date and time when the policy was cancelled
+          example: 2023-01-01T12:00:00Z
+      required:
+        - policyCode
+        - status
+        - cancelReason
+        - cancelledAt
+security:
+  - bearer: []
