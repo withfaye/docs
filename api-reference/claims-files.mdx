@@ -1,0 +1,143 @@
+---
+title: "Claim files"
+description: "Upload and manage documents for a Faye claim."
+icon: "paperclip"
+---
+
+Use claim file endpoints to upload supporting documents before or after claim submission. Files can include receipts, carrier notices, medical bills, police reports, itinerary records, baggage reports, or screenshots that support the claim.
+
+## Upload a file
+
+Upload files with `multipart/form-data`.
+
+```http
+POST /v1/claims/files
+```
+
+```bash
+curl "$FAYE_BASE_URL/v1/claims/files" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN" \
+  -F "policyCode=P26-1234" \
+  -F "documentType=carrier_delay_confirmation" \
+  -F "file=@./delay-confirmation.pdf;type=application/pdf"
+```
+
+Example response:
+
+```json
+{
+  "fileId": "file_abc123",
+  "policyCode": "P26-1234",
+  "documentType": "carrier_delay_confirmation",
+  "fileName": "delay-confirmation.pdf",
+  "contentType": "application/pdf",
+  "sizeBytes": 184221,
+  "status": "uploaded",
+  "createdAt": "2026-08-20T14:10:00Z"
+}
+```
+
+Pass the returned `fileId` in `documents` when you create or update a claim.
+
+## Attach a file to a claim
+
+If you upload a file after First Notice of Loss, attach it to the claim.
+
+```http
+POST /v1/claims/{claimId}/files
+```
+
+```json
+{
+  "fileId": "file_abc123",
+  "documentType": "receipt",
+  "description": "Hotel receipt from overnight delay."
+}
+```
+
+## List claim files
+
+Call `GET /v1/claims/{claimId}/files` to show documents already attached to a claim.
+
+```bash
+curl "$FAYE_BASE_URL/v1/claims/clm_01J5Z6B7Q8R9T0V1W2X3Y4Z5/files" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN"
+```
+
+Example response:
+
+```json
+{
+  "claimId": "clm_01J5Z6B7Q8R9T0V1W2X3Y4Z5",
+  "files": [
+    {
+      "fileId": "file_abc123",
+      "documentType": "carrier_delay_confirmation",
+      "fileName": "delay-confirmation.pdf",
+      "contentType": "application/pdf",
+      "sizeBytes": 184221,
+      "status": "accepted",
+      "createdAt": "2026-08-20T14:10:00Z"
+    }
+  ]
+}
+```
+
+## Download a file
+
+Call `GET /v1/claims/files/{fileId}` to retrieve a temporary download URL.
+
+```json
+{
+  "fileId": "file_abc123",
+  "downloadUrl": "https://files.withfaye.com/temporary/file_abc123",
+  "expiresAt": "2026-08-20T15:10:00Z"
+}
+```
+
+Do not store temporary download URLs. Request a new URL when the traveler or advisor needs to view the file.
+
+## Remove a file
+
+Call `DELETE /v1/claims/files/{fileId}` only when the file has not been accepted for review.
+
+```bash
+curl -X DELETE "$FAYE_BASE_URL/v1/claims/files/file_abc123" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN"
+```
+
+## File requirements
+
+| Requirement | Value |
+| --- | --- |
+| Maximum file size | 25 MB |
+| Supported formats | `pdf`, `jpg`, `jpeg`, `png`, `heic`, `webp` |
+| Filename | 255 characters or fewer |
+| Virus scan | Faye scans uploaded files before review. |
+| Retention | Files are retained with the claim record according to Faye policy retention rules. |
+
+## File statuses
+
+| Status | Meaning |
+| --- | --- |
+| `uploaded` | File was received and is waiting for processing. |
+| `processing` | File is being scanned or converted. |
+| `accepted` | File is available for claim review. |
+| `rejected` | File failed validation, virus scan, or content checks. |
+
+## Document types
+
+Use the `documentType` values returned by the intake schema when possible.
+
+Common document types include:
+
+- `receipt`
+- `carrier_delay_confirmation`
+- `baggage_irregularity_report`
+- `medical_bill`
+- `medical_record`
+- `police_report`
+- `itinerary`
+- `proof_of_payment`
+- `cancellation_notice`
+- `other`

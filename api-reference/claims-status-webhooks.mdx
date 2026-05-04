@@ -1,0 +1,182 @@
+---
+title: "Claim status and webhooks"
+description: "Retrieve claim status and receive claim lifecycle events."
+icon: "webhook"
+---
+
+Use polling or webhooks to keep your traveler experience in sync with Faye claim review.
+
+## Get a claim
+
+Call `GET /v1/claims/{claimId}` to retrieve the latest claim state.
+
+```bash
+curl "$FAYE_BASE_URL/v1/claims/clm_01J5Z6B7Q8R9T0V1W2X3Y4Z5" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN"
+```
+
+Example response:
+
+```json
+{
+  "claimId": "clm_01J5Z6B7Q8R9T0V1W2X3Y4Z5",
+  "claimNumber": "FAYE-CLM-2026-000123",
+  "policyCode": "P26-1234",
+  "claimType": "trip_delay",
+  "status": "action_required",
+  "submittedAt": "2026-08-20T14:20:00Z",
+  "updatedAt": "2026-08-21T09:05:00Z",
+  "claimant": {
+    "travelerPolicyId": "P26-1234-1",
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "email": "jane.doe@example.com"
+  },
+  "estimatedAmount": {
+    "amount": 186.42,
+    "currency": "USD"
+  },
+  "requiredActions": [
+    {
+      "actionId": "act_123",
+      "type": "document_required",
+      "message": "Please upload an itemized receipt for the hotel expense.",
+      "documentType": "receipt",
+      "dueAt": "2026-09-04T23:59:59Z"
+    }
+  ],
+  "timeline": [
+    {
+      "status": "submitted",
+      "occurredAt": "2026-08-20T14:20:00Z"
+    },
+    {
+      "status": "action_required",
+      "occurredAt": "2026-08-21T09:05:00Z"
+    }
+  ]
+}
+```
+
+## List claims for a policy
+
+Call `GET /v1/policy/code/{policyCode}/claims` to retrieve claims filed against a policy.
+
+```bash
+curl "$FAYE_BASE_URL/v1/policy/code/P26-1234/claims" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN"
+```
+
+Example response:
+
+```json
+{
+  "policyCode": "P26-1234",
+  "claims": [
+    {
+      "claimId": "clm_01J5Z6B7Q8R9T0V1W2X3Y4Z5",
+      "claimNumber": "FAYE-CLM-2026-000123",
+      "claimType": "trip_delay",
+      "status": "action_required",
+      "submittedAt": "2026-08-20T14:20:00Z",
+      "updatedAt": "2026-08-21T09:05:00Z"
+    }
+  ]
+}
+```
+
+## Claim statuses
+
+| Status | Traveler-facing behavior |
+| --- | --- |
+| `submitted` | Confirm that Faye received the claim. |
+| `in_review` | Show that review is underway. |
+| `action_required` | Show the required actions and let the traveler upload documents or correct incident details. |
+| `approved` | Show that Faye approved the claim. |
+| `declined` | Show the decline reason returned by Faye. |
+| `closed` | Show the final claim outcome. |
+
+## Webhook events
+
+Faye sends claim webhooks to the endpoint configured for your partner account.
+
+| Event type | When it sends |
+| --- | --- |
+| `claim.created` | A claim is submitted. |
+| `claim.updated` | Claim details change. |
+| `claim.status_changed` | Claim status changes. |
+| `claim.action_required` | Faye needs more information. |
+| `claim.document_accepted` | A submitted file was accepted for review. |
+| `claim.document_rejected` | A submitted file failed validation or review. |
+| `claim.approved` | Claim is approved. |
+| `claim.declined` | Claim is declined. |
+
+## Webhook payload
+
+```json
+{
+  "id": "evt_01J5Z7M8N9P0Q1R2S3T4U5V6",
+  "type": "claim.status_changed",
+  "createdAt": "2026-08-21T09:05:00Z",
+  "data": {
+    "claimId": "clm_01J5Z6B7Q8R9T0V1W2X3Y4Z5",
+    "claimNumber": "FAYE-CLM-2026-000123",
+    "policyCode": "P26-1234",
+    "externalId": "booking_12345_claim_1",
+    "previousStatus": "in_review",
+    "status": "action_required",
+    "requiredActions": [
+      {
+        "actionId": "act_123",
+        "type": "document_required",
+        "message": "Please upload an itemized receipt for the hotel expense.",
+        "documentType": "receipt",
+        "dueAt": "2026-09-04T23:59:59Z"
+      }
+    ]
+  }
+}
+```
+
+## Verify webhook signatures
+
+Faye signs each webhook with HMAC-SHA256.
+
+```http
+Faye-Event-Id: evt_01J5Z7M8N9P0Q1R2S3T4U5V6
+Faye-Timestamp: 1787312700
+Faye-Signature: sha256=7e7c0c8f...
+```
+
+Verify the signature against the raw request body before processing the event.
+
+```js
+import crypto from "node:crypto";
+
+function verifyFayeWebhook({ rawBody, timestamp, signature, secret }) {
+  const signedPayload = `${timestamp}.${rawBody}`;
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(signedPayload)
+    .digest("hex");
+
+  const received = signature.replace("sha256=", "");
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expected, "hex"),
+    Buffer.from(received, "hex")
+  );
+}
+```
+
+Reject webhooks when:
+
+- The signature is missing or invalid.
+- The timestamp is older than 5 minutes.
+- The event ID was already processed.
+
+## Delivery behavior
+
+Faye expects your webhook endpoint to return a `2xx` response within 10 seconds. If delivery fails, Faye retries with exponential backoff.
+
+Use the webhook event `id` to detect duplicate deliveries. Events can arrive more than once and may arrive out of order. When ordering matters, fetch the latest claim with `GET /v1/claims/{claimId}` before updating your local record.

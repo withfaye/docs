@@ -1,0 +1,173 @@
+---
+title: "Claim intake and eligibility"
+description: "Retrieve claim types, eligibility, and dynamic intake fields."
+icon: "clipboard-list"
+---
+
+Start each claim flow by looking up what the policy supports. Claim availability depends on product, coverage, trip dates, add-ons, residency, policy status, and previous claims.
+
+## List claim types
+
+Call `GET /v1/claims/types?policyCode={policyCode}` to retrieve claim types available for a purchased policy.
+
+```bash
+curl "$FAYE_BASE_URL/v1/claims/types?policyCode=P26-1234" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN"
+```
+
+Example response:
+
+```json
+{
+  "policyCode": "P26-1234",
+  "claimTypes": [
+    {
+      "type": "trip_delay",
+      "label": "Trip delay",
+      "description": "Expenses caused by a covered travel delay.",
+      "available": true
+    },
+    {
+      "type": "baggage_delay",
+      "label": "Baggage delay",
+      "description": "Essential purchases while checked baggage is delayed.",
+      "available": true
+    },
+    {
+      "type": "cancel_for_any_reason",
+      "label": "Cancel For Any Reason",
+      "available": false,
+      "reason": "CFAR was not purchased for this policy."
+    }
+  ]
+}
+```
+
+## Check eligibility
+
+Call `GET /v1/claims/eligibility?policyCode={policyCode}&claimType={claimType}` before showing the full intake form.
+
+```bash
+curl "$FAYE_BASE_URL/v1/claims/eligibility?policyCode=P26-1234&claimType=trip_delay" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN"
+```
+
+Example response:
+
+```json
+{
+  "eligible": true,
+  "policyCode": "P26-1234",
+  "claimType": "trip_delay",
+  "coverage": {
+    "coverageCode": "travelDelay",
+    "currency": "USD",
+    "limit": 300,
+    "deductible": 0
+  },
+  "claimWindow": {
+    "opensAt": "2026-08-15T00:00:00Z",
+    "closesAt": "2026-11-20T23:59:59Z"
+  }
+}
+```
+
+If the traveler cannot file the selected claim type, Faye returns `eligible: false` with a plain-language reason.
+
+```json
+{
+  "eligible": false,
+  "policyCode": "P26-1234",
+  "claimType": "trip_cancellation",
+  "reason": "Trip cancellation coverage is not selected on this policy."
+}
+```
+
+## Get intake schema
+
+Call `GET /v1/claims/intake?policyCode={policyCode}&claimType={claimType}` to get the incident fields and documents your UI should collect.
+
+```bash
+curl "$FAYE_BASE_URL/v1/claims/intake?policyCode=P26-1234&claimType=trip_delay" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN"
+```
+
+Example response:
+
+```json
+{
+  "policyCode": "P26-1234",
+  "claimType": "trip_delay",
+  "incidentFields": [
+    {
+      "id": "occurredAt",
+      "label": "When did this happen?",
+      "type": "date_time",
+      "required": true
+    },
+    {
+      "id": "summary",
+      "label": "What happened?",
+      "type": "textarea",
+      "required": true
+    },
+    {
+      "id": "estimatedAmount",
+      "label": "Estimated amount",
+      "type": "money",
+      "required": false,
+      "currency": "USD"
+    },
+    {
+      "id": "carrierName",
+      "label": "Carrier",
+      "type": "text",
+      "required": false
+    }
+  ],
+  "claimTypeFields": [
+    {
+      "id": "delayHours",
+      "label": "Total delay hours",
+      "type": "number",
+      "required": false,
+      "minimum": 1
+    }
+  ],
+  "requiredDocuments": [
+    {
+      "type": "carrier_delay_confirmation",
+      "label": "Carrier delay confirmation",
+      "required": true
+    },
+    {
+      "type": "receipt",
+      "label": "Receipts for claimed expenses",
+      "required": true,
+      "allowMultiple": true
+    }
+  ]
+}
+```
+
+## Supported field types
+
+| Type | UI behavior |
+| --- | --- |
+| `text` | Single-line text input. |
+| `textarea` | Multi-line text input. |
+| `date` | Calendar date in `YYYY-MM-DD` format. |
+| `date_time` | ISO-8601 timestamp. |
+| `number` | Numeric input. |
+| `money` | Amount plus currency. |
+| `select` | Single-select list from `options`. |
+| `multi_select` | Multi-select list from `options`. |
+| `boolean` | Yes or no. |
+
+## UI guidance
+
+- Render fields in the order returned by Faye.
+- Treat unknown field types as unsupported and show a recoverable error.
+- Validate required fields before submission.
+- Upload required documents before submitting First Notice of Loss.
+- Preserve the field IDs exactly when sending claim-type fields in `incident.details`.

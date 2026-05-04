@@ -30,6 +30,16 @@
             ]
           },
           {
+            "group": "Claims",
+            "pages": [
+              "api-reference/claims-overview",
+              "api-reference/claims-intake",
+              "api-reference/claims-create",
+              "api-reference/claims-files",
+              "api-reference/claims-status-webhooks"
+            ]
+          },
+          {
             "group": "Operations",
             "pages": [
               "api-reference/advisors",

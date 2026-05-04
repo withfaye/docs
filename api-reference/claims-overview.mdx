@@ -1,0 +1,62 @@
+---
+title: "Claims API"
+description: "Submit and track Faye claims from your partner experience."
+icon: "file-heart"
+---
+
+Use the Claims API to let travelers submit First Notice of Loss, upload supporting documents, track review status, and receive updates in your own product.
+
+The Claims API uses the same base URLs and bearer authentication as the rest of the Faye Partner Sales API.
+
+## Claim lifecycle
+
+1. Retrieve the claim types available for the purchased policy.
+2. Retrieve the intake schema for the selected claim type.
+3. Upload supporting files before FNOL submission when the intake schema asks for documents.
+4. Submit First Notice of Loss with claimant details, incident details, and uploaded file IDs.
+5. Track claim status by polling or receiving webhooks.
+6. Show action-required messages when Faye needs more information.
+
+## Endpoints
+
+| Use case | Endpoint |
+| --- | --- |
+| List available claim types | `GET /v1/claims/types?policyCode={policyCode}` |
+| Check claim eligibility | `GET /v1/claims/eligibility?policyCode={policyCode}&claimType={claimType}` |
+| Get intake schema | `GET /v1/claims/intake?policyCode={policyCode}&claimType={claimType}` |
+| Upload a claim file | `POST /v1/claims/files` |
+| Submit First Notice of Loss | `POST /v1/claims` |
+| Get a claim | `GET /v1/claims/{claimId}` |
+| Update a claim | `PATCH /v1/claims/{claimId}` |
+| List policy claims | `GET /v1/policy/code/{policyCode}/claims` |
+| List claim files | `GET /v1/claims/{claimId}/files` |
+| Download a file | `GET /v1/claims/files/{fileId}` |
+
+## Core objects
+
+| Object | Description |
+| --- | --- |
+| Claim type | A claim category available for a policy, such as trip delay, baggage delay, medical expense, trip cancellation, or CFAR. |
+| Intake schema | The dynamic set of sections and fields your UI should ask for before submission. |
+| Claim | The submitted claim record. It includes claimant details, policy reference, incident details, status, and required actions. |
+| Claim file | A document uploaded for a claim, such as receipts, carrier notices, medical bills, police reports, or proof of delay. |
+
+## Status categories
+
+| Status | Meaning |
+| --- | --- |
+| `submitted` | Faye received the claim. |
+| `in_review` | The claim is under review. |
+| `action_required` | Faye needs more information from the traveler or partner. |
+| `approved` | The claim was approved. |
+| `declined` | The claim was not approved. |
+| `closed` | The claim is complete and no further action is expected. |
+
+## Authentication
+
+Send your Faye bearer token on every Claims API request.
+
+```http
+Authorization: Bearer <token>
+Content-Type: application/json
+```

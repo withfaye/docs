@@ -1,0 +1,173 @@
+---
+title: "First Notice of Loss"
+description: "Open a claim file with policy, claimant, incident, and document details."
+icon: "file-plus-2"
+---
+
+Submit First Notice of Loss after you have confirmed the claim type and collected the basic incident details from the traveler.
+
+## Endpoint
+
+```http
+POST /v1/claims
+```
+
+```bash
+curl "$FAYE_BASE_URL/v1/claims" \
+  -H "Authorization: Bearer $FAYE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "policyCode": "P26-1234",
+    "claimType": "trip_delay",
+    "externalId": "booking_12345_claim_1",
+    "claimant": {
+      "travelerPolicyId": "P26-1234-1",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "email": "jane.doe@example.com",
+      "phone": "+14155550123"
+    },
+    "incident": {
+      "occurredAt": "2026-08-16T18:30:00Z",
+      "type": "travel_delay",
+      "summary": "Flight from Paris to San Francisco was delayed overnight due to mechanical issues.",
+      "location": {
+        "country": "FR",
+        "locality": "Paris",
+        "label": "Paris Charles de Gaulle Airport"
+      },
+      "estimatedAmount": {
+        "amount": 186.42,
+        "currency": "USD"
+      },
+      "details": {
+        "carrierName": "Example Air",
+        "delayHours": 14
+      }
+    },
+    "documents": [
+      {
+        "fileId": "file_abc123",
+        "documentType": "carrier_delay_confirmation"
+      },
+      {
+        "fileId": "file_def456",
+        "documentType": "receipt"
+      }
+    ]
+  }'
+```
+
+## Request body
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `policyCode` | Yes | Policy group code returned by purchase or policy lookup. |
+| `claimType` | Yes | Claim type from `GET /v1/claims/types`. |
+| `externalId` | No | Your stable claim or booking identifier. |
+| `claimant` | Yes | Traveler or claimant reporting the loss. |
+| `incident` | Yes | Date, type, location, summary, and estimated amount for the event. |
+| `documents` | No | Uploaded file IDs and document types. You can add files after FNOL submission. |
+
+## Claimant
+
+Use `travelerPolicyId` when the claimant is one of the travelers on the purchased policy.
+
+```json
+{
+  "travelerPolicyId": "P26-1234-1",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "email": "jane.doe@example.com",
+  "phone": "+14155550123"
+}
+```
+
+## Incident
+
+Use `occurredAt` for the date and time when the loss happened. Use ISO-8601 timestamps with timezone offsets or UTC.
+
+```json
+{
+  "occurredAt": "2026-08-16T18:30:00Z",
+  "type": "travel_delay",
+  "summary": "Baggage was delayed after arrival.",
+  "location": {
+    "country": "FR",
+    "locality": "Paris",
+    "label": "Paris, France"
+  },
+  "estimatedAmount": {
+    "amount": 186.42,
+    "currency": "USD"
+  },
+  "details": {
+    "carrierName": "Example Air",
+    "delayHours": 14
+  }
+}
+```
+
+## FNOL response
+
+A successful request returns `201 Created`.
+
+```json
+{
+  "claimId": "clm_01J5Z6B7Q8R9T0V1W2X3Y4Z5",
+  "claimNumber": "FAYE-CLM-2026-000123",
+  "policyCode": "P26-1234",
+  "claimType": "trip_delay",
+  "status": "submitted",
+  "submittedAt": "2026-08-20T14:20:00Z",
+  "claimant": {
+    "travelerPolicyId": "P26-1234-1",
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "email": "jane.doe@example.com"
+  },
+  "review": {
+    "status": "queued",
+    "estimatedReviewBy": "2026-08-23T00:00:00Z"
+  },
+  "links": {
+    "self": "/v1/claims/clm_01J5Z6B7Q8R9T0V1W2X3Y4Z5",
+    "files": "/v1/claims/clm_01J5Z6B7Q8R9T0V1W2X3Y4Z5/files"
+  }
+}
+```
+
+## Add information later
+
+Use `PATCH /v1/claims/{claimId}` only when a claim is still editable or Faye has requested more information.
+
+```json
+{
+  "incident": {
+    "summary": "Added final delay duration after receiving the carrier notice.",
+    "estimatedAmount": {
+      "amount": 216.42,
+      "currency": "USD"
+    }
+  },
+  "documents": [
+    {
+      "fileId": "file_new789",
+      "documentType": "receipt"
+    }
+  ],
+  "message": "Added the final hotel receipt."
+}
+```
+
+The response returns the updated claim.
+
+## Validation errors
+
+| Status | Cause |
+| --- | --- |
+| `400` | Missing required fields, invalid incident details, or unsupported document type. |
+| `401` | Missing or invalid bearer token. |
+| `404` | Policy or traveler policy ID was not found. |
+| `409` | Claim cannot be edited in its current status. |
+| `422` | Claim type is not eligible for the policy or event date. |
