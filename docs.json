@@ -11,7 +11,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "API reference",
         "groups": [
           {
             "group": "Getting started",
@@ -48,12 +48,7 @@
               "ai-tools/claude-code",
               "ai-tools/windsurf"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
+          },
           {
             "group": "API documentation",
             "pages": [
@@ -61,7 +56,7 @@
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Partner API Reference",
             "openapi":"api-reference/openapi.yaml"
           }
         ]
